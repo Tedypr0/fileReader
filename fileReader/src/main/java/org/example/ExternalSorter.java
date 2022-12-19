@@ -1,6 +1,8 @@
 package org.example;
 
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -11,6 +13,7 @@ public class ExternalSorter {
     static String fileNames = "sortedGeneration";
 
     public static void main(String[] args) throws IOException {
+        long begin = System.currentTimeMillis();
         int slices = (int) Math.ceil((double) lines / maxElements);
         try (FileReader fileToSort = new FileReader("C:\\csv\\100m.csv");
              BufferedReader buffer = new BufferedReader(fileToSort)) {
@@ -53,7 +56,6 @@ public class ExternalSorter {
                 if (min >= Integer.parseInt(elements[1])) {
                     min = Integer.parseInt(elements[1]);
                 }
-
             }
 
             //Writes every value which is == to min and continues onward.
@@ -64,14 +66,18 @@ public class ExternalSorter {
                     writer.newLine();
                     firstLines[j] = readers.get(j).readLine();
                 }
-
             }
         }
+        for(int i = 0; i<slices; i++){
+            readers.get(i).close();
+            Files.delete(Paths.get(String.format("C:\\csv\\sortedFiles\\%s%d.csv",fileNames,i)));
+        }
+        writer.close();
+        System.out.printf("TIME: %d", (System.currentTimeMillis()-begin));
     }
 
     public static void merge(String[] strings, String[] temp, int from, int mid, int to) {
         int k = from, i = from, j = mid + 1;
-        try {
             while (i <= mid && j <= to) {
                 String[] leftElement = strings[i].split(",");
                 String[] rightElement = strings[j].split(",");
@@ -81,11 +87,6 @@ public class ExternalSorter {
                     temp[k++] = strings[j++];
                 }
             }
-        } catch (NullPointerException e) {
-            System.out.println("NULL");
-        } catch (ArrayIndexOutOfBoundsException b) {
-            System.out.println("?");
-        }
 
         while (i < strings.length && i <= mid) {
             temp[k++] = strings[i++];
