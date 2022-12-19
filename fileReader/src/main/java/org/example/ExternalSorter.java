@@ -6,13 +6,13 @@ import java.util.Arrays;
 import java.util.List;
 
 public class ExternalSorter {
-    static int lines = 500000;
+    static int lines = 100000000;
     static int maxElements = 100000;
     static String fileNames = "sortedGeneration";
 
     public static void main(String[] args) throws IOException {
         int slices = (int) Math.ceil((double) lines / maxElements);
-        try (FileReader fileToSort = new FileReader("C:\\csv\\500k.csv");
+        try (FileReader fileToSort = new FileReader("C:\\csv\\100m.csv");
              BufferedReader buffer = new BufferedReader(fileToSort)) {
             String line;
             line = buffer.readLine();
@@ -23,12 +23,12 @@ public class ExternalSorter {
                     line = buffer.readLine();
                     elements[j] = line;
                 }
+                mergesort(elements);
+                //Write slices
+                writeSortedFile(elements, sliceNumber);
+                sliceNumber++;
+                elements = new String[maxElements];
             }
-            mergesort(elements);
-            //Write slices
-            writeSortedFile(elements, sliceNumber);
-            sliceNumber++;
-            elements = new String[maxElements];
         }
         List<BufferedReader> readers = new ArrayList<>(slices);
         String[] firstLines = new String[slices];
