@@ -21,32 +21,29 @@ public class ExternalSorter {
             for (int i = 0; i < slices; i++) {
                 for (int j = 0; j < maxElements; j++) {
                     line = buffer.readLine();
-                    if (line != null) {
-                        elements[j] = line;
-                    } else {
-                        break;
-                    }
+                    elements[j] = line;
                 }
-                mergesort(elements);
-                //Write slices
-                writeSortedFile(elements, sliceNumber);
-                sliceNumber++;
-                elements = new String[maxElements];
             }
-        } catch (IOException e) {
-            System.out.println("File not found");
+            mergesort(elements);
+            //Write slices
+            writeSortedFile(elements, sliceNumber);
+            sliceNumber++;
+            elements = new String[maxElements];
         }
         List<BufferedReader> readers = new ArrayList<>(slices);
         String[] firstLines = new String[slices];
         String line;
+
         for (int i = 0; i < slices; i++) {
             readers.add(new BufferedReader(new FileReader(String.format("C:\\csv\\sortedFiles\\%s%d.csv", fileNames, i))));
             line = readers.get(i).readLine();
             firstLines[i] = line;
         }
+
         int min;
         String[] elements;
         BufferedWriter writer = new BufferedWriter(new FileWriter("C:\\csv\\sortedFiles\\result.csv"));
+
         //Reads all Files
         for (int i = 0; i < maxElements; i++) {
             min = Integer.MAX_VALUE;
