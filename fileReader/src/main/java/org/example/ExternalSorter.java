@@ -17,7 +17,7 @@ import java.util.List;
 
 public class ExternalSorter {
     static int lines = 0;
-    static int maxElements = 100000;
+    static int maxElements = 100000;    //Write here how many lines each slice will have.
     static String sortFileDir = "C:\\csv\\100m.csv";
     static String fileNames = "sortedGeneration";
 
@@ -28,11 +28,11 @@ public class ExternalSorter {
         FileReader lineFile = new FileReader(sortFileDir);
         BufferedReader lineCounter = new BufferedReader(lineFile);
         String line;
-        //Skips first line due to invalid characters
+        //Count the lines of our file.
         while (lineCounter.readLine() != null) {
             lines++;
         }
-     //   System.out.println(lines);
+
         lineFile.close();
         lineCounter.close();
         try (FileReader fileToSort = new FileReader(sortFileDir);
@@ -47,9 +47,12 @@ public class ExternalSorter {
                     elements[j] = line;
                 }
                 mergesort(elements);
+
                 //Write slices
                 writeSortedFile(elements, sliceNumber);
                 sliceNumber++;
+
+                //Checks if the last slice has to be less than maxElements and if it does, creates a new array with leftover elements.
                 if (i >= (slices - 2) && (lines % maxElements != 0)) {
                     elements = new String[lines % maxElements];
                     lastFile = lines % maxElements;
@@ -70,7 +73,7 @@ public class ExternalSorter {
         int min;
         String[] elements;
         BufferedWriter writer = new BufferedWriter(new FileWriter("C:\\csv\\sortedFiles\\result.csv"));
-        int written = 0;
+
         //Reads all Files
         while (true) {
             min = Integer.MAX_VALUE;
@@ -89,13 +92,14 @@ public class ExternalSorter {
                 if (firstLines[j] != null) {
                     elements = firstLines[j].split(",");
                     if (min == Integer.parseInt(elements[1])) {
-                        written++;
                         writer.write(firstLines[j]);
                         writer.newLine();
                         firstLines[j] = readers.get(j).readLine();
                     }
                 }
             }
+
+            //Checks if all firstLines are null, if a firstLine is null it means that its corresponding reader has finished reading.
             int count = 0;
             for (int i = 0; i < slices; i++) {
                 if (firstLines[i] != null) {
@@ -105,6 +109,8 @@ public class ExternalSorter {
                 }
 
             }
+
+            //Closes all readers.
             if (count == slices) {
                 for (int i = 0; i < slices; i++) {
                     readers.get(i).close();
