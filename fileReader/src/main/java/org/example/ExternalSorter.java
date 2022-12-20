@@ -32,7 +32,7 @@ public class ExternalSorter {
         while (lineCounter.readLine() != null) {
             lines++;
         }
-        System.out.println(lines);
+     //   System.out.println(lines);
         lineFile.close();
         lineCounter.close();
         try (FileReader fileToSort = new FileReader(sortFileDir);
@@ -46,13 +46,13 @@ public class ExternalSorter {
                     line = buffer.readLine();
                     elements[j] = line;
                 }
-                    mergesort(elements);
+                mergesort(elements);
                 //Write slices
                 writeSortedFile(elements, sliceNumber);
                 sliceNumber++;
-                if (i >= (slices - 2) && (lines%maxElements != 0)) {
+                if (i >= (slices - 2) && (lines % maxElements != 0)) {
                     elements = new String[lines % maxElements];
-                    lastFile = lines%maxElements;
+                    lastFile = lines % maxElements;
                 } else {
                     elements = new String[maxElements];
                 }
@@ -114,26 +114,21 @@ public class ExternalSorter {
                 break;
             }
         }
-        System.out.println(written);
+        //  System.out.println(written);
         System.out.printf("TIME: %d", (System.currentTimeMillis() - begin));
     }
 
     public static void merge(String[] strings, String[] temp, int from, int mid, int to) {
         int k = from, i = from, j = mid + 1;
-        try {
-            while (i <= mid && j <= to) {
-                String[] leftElement = strings[i].split(",");
-                String[] rightElement = strings[j].split(",");
-                if ((Integer.parseInt(leftElement[1])) < Integer.parseInt(rightElement[1])) {
-                    temp[k++] = strings[i++];
-                } else {
-                    temp[k++] = strings[j++];
-                }
+        while (i <= mid && j <= to) {
+            String[] leftElement = strings[i].split(",");
+            String[] rightElement = strings[j].split(",");
+            if ((Integer.parseInt(leftElement[1])) < Integer.parseInt(rightElement[1])) {
+                temp[k++] = strings[i++];
+            } else {
+                temp[k++] = strings[j++];
             }
-        }catch (NullPointerException e){
-            System.out.println("NULL");
         }
-
         while (i < strings.length && i <= mid) {
             temp[k++] = strings[i++];
         }
