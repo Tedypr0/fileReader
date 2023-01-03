@@ -21,8 +21,9 @@ public class ExternalSorter {
     private static final UniqueEventsQueue<String[]> queue = new UniqueEventsQueue<>(40);
     static int lines = 0;
     static int maxElements = 200000;    //Write here how many lines each temp file will have.
-    static String sortFileDir = "C:\\csv\\100m.csv";
+    static String sortFileDir = "C:\\csv\\10m.csv";
     static String fileNames = "sortedGeneration";
+    static String tempFileDir = "C:\\csv\\sortedFiles\\";
     static AtomicInteger counter = new AtomicInteger(0);
     static int count = 0;
 
@@ -34,7 +35,13 @@ public class ExternalSorter {
         BufferedReader lineCounter = new BufferedReader(lineFile);
         String line;
         //Count the lines of our file.
-        while (lineCounter.readLine() != null) {
+        while ((line = lineCounter.readLine()) != null) {
+            try {
+                line = line.split(",")[1];
+            } catch (ArrayIndexOutOfBoundsException ignored) {
+                //This catch is here if our csv file has invalid data.
+                continue;
+            }
             lines++;
         }
         slices = (int) Math.ceil((double) lines / maxElements);
@@ -50,7 +57,6 @@ public class ExternalSorter {
         lineCounter.close();
 
         try (FileReader fileToSort = new FileReader(sortFileDir); BufferedReader buffer = new BufferedReader(fileToSort)) {
-
             String[] elements = new String[maxElements];
 
             int lastFile = maxElements;
@@ -85,14 +91,14 @@ public class ExternalSorter {
 
 
         for (int i = 0; i < slices; i++) {
-            readers.add(new BufferedReader(new FileReader(String.format("C:\\csv\\sortedFiles\\%s%d.csv", fileNames, i))));
+            readers.add(new BufferedReader(new FileReader(String.format("%s%s%d.csv", tempFileDir, fileNames, i))));
             line = readers.get(i).readLine();
             firstLines[i] = line;
         }
 
         int min;
         String[] elements;
-        BufferedWriter writer = new BufferedWriter(new FileWriter("C:\\csv\\sortedFiles\\result.csv"));
+        BufferedWriter writer = new BufferedWriter(new FileWriter(String.format("%sresult.csv", tempFileDir)));
 
         //Reads all Files
         while (true) {
@@ -124,6 +130,9 @@ public class ExternalSorter {
                     } catch (ArrayIndexOutOfBoundsException ignored) {
                         firstLines[j] = readers.get(j).readLine();
                     }
+                } else {
+                    //remove reader at j element and close it.
+                    //remove firstLine at j element
                 }
             }
 
@@ -142,7 +151,7 @@ public class ExternalSorter {
             if (count == slices) {
                 for (int i = 0; i < slices; i++) {
                     readers.get(i).close();
-                    Files.delete(Paths.get(String.format("C:\\csv\\sortedFiles\\%s%d.csv", fileNames, i)));
+                    Files.delete(Paths.get(String.format("%s%s%d.csv", tempFileDir, fileNames, i)));
                 }
                 writer.close();
                 break;
