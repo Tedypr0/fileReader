@@ -52,7 +52,7 @@ public class ExternalSorter {
         slices = (int) Math.ceil((double) lines / maxElements);
         List<Consumer> threads = new ArrayList<>();
         for (int i = 0; i < threadPoolSize; i++) {
-            threads.add(new Consumer(queue, counter, slices));
+            threads.add(new Consumer(queue, counter));
             threads.get(i).start();
 
         }
