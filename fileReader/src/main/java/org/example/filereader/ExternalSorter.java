@@ -24,7 +24,7 @@ public class ExternalSorter {
     private static final UniqueEventsQueue<String[]> queue = new UniqueEventsQueue<>(40);
     static int lines = 0;
     static int maxElements = 200000;    //Write here how many lines each temp file will have.
-    static String sortFileDir = "C:\\csv\\100m.csv";
+    static String sortFileDir = "C:\\csv\\10m.csv";
     static String fileNames = "sortedGeneration";
     static String tempFileDir = "C:\\csv\\sortedFiles\\";
     static AtomicInteger counter = new AtomicInteger(0);
@@ -40,12 +40,7 @@ public class ExternalSorter {
         // Count the lines of our file.
         // O(number of lines) linear.
         while ((line = lineCounter.readLine()) != null) {
-            try {
-                line = line.split(",")[1];
-            } catch (ArrayIndexOutOfBoundsException ignored) {
-                /*This catch is here if our csv file has invalid data.
-                    Invalid data means if the big csv file contains anything different from a number in the second column.
-                */
+            if(line.split(",").length == 1){
                 continue;
             }
             lines++;
@@ -120,23 +115,21 @@ public class ExternalSorter {
                 }
             }
             count = 0;
-            //Writes every value which is == to min and continues onward.
+            //Writes every value which is == to min and continues on.
             for (int j = 0; j < slices; j++) {
                 if (firstLines[j] != null) {
                     elements = firstLines[j].split(",");
-                    try {
                         if (min == Integer.parseInt(elements[1])) {
                             writer.write(firstLines[j]);
                             writer.newLine();
                             firstLines[j] = readers.get(j).readLine();
                         }
-                    } catch (ArrayIndexOutOfBoundsException ignored) {
+
                         /*This catch is here if our csv file has invalid data.
                         Invalid data means if the big csv file contains anything different from a number in the second column.
                         If it does, skips the current line.
                         */
-                        firstLines[j] = readers.get(j).readLine();
-                    }
+
                 }
             }
 
