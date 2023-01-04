@@ -20,8 +20,8 @@ public class Consumer extends Thread {
                 ExternalSorter.mergesort(elements);
                 ExternalSorter.writeSortedFile(elements, counter.getAndIncrement());
             } catch (IOException | InterruptedException e) {
-               throw new RuntimeException();
-            }while (queue.size()>0);
+                throw new RuntimeException();
+            } while (queue.size() > 0);
         System.out.println(this.getName() + " has finished its' work!");
     }
 }

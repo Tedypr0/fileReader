@@ -37,7 +37,8 @@ public class ExternalSorter {
         FileReader lineFile = new FileReader(sortFileDir);
         BufferedReader lineCounter = new BufferedReader(lineFile);
         String line;
-        //Count the lines of our file.
+        // Count the lines of our file.
+        // O(number of lines) linear.
         while ((line = lineCounter.readLine()) != null) {
             try {
                 line = line.split(",")[1];
@@ -66,9 +67,9 @@ public class ExternalSorter {
 
             int lastFile = maxElements;
 
+            // O(slices*lastFile) complexity which is linear.
             for (int i = 0; i < slices; i++) {
                 for (int j = 0; j < lastFile; j++) {
-
                     line = buffer.readLine();
                     elements[j] = line;
                 }
@@ -94,7 +95,7 @@ public class ExternalSorter {
             thread.join();
         }
 
-
+        // Creates and adds into an ArrayList readers for each temp file.
         for (int i = 0; i < slices; i++) {
             readers.add(new BufferedReader(new FileReader(String.format("%s%s%d.csv", tempFileDir, fileNames, i))));
             line = readers.get(i).readLine();
@@ -106,15 +107,16 @@ public class ExternalSorter {
         BufferedWriter writer = new BufferedWriter(new FileWriter(String.format("%sresult.csv", tempFileDir)));
 
         //Reads all Files
+        // O(Number of readers * maxElements) which equals to the number of lines in the csv file.
         while (true) {
             min = Integer.MAX_VALUE;
             //Reads finds min value for each reader
             for (int k = 0; k < slices; k++) {
                 if (firstLines[k] != null) {
                     elements = firstLines[k].split(",");
-                        if (min >= Integer.parseInt(elements[1])) {
-                            min = Integer.parseInt(elements[1]);
-                        }
+                    if (min >= Integer.parseInt(elements[1])) {
+                        min = Integer.parseInt(elements[1]);
+                    }
                 }
             }
             count = 0;
@@ -129,12 +131,16 @@ public class ExternalSorter {
                             firstLines[j] = readers.get(j).readLine();
                         }
                     } catch (ArrayIndexOutOfBoundsException ignored) {
+                        /*This catch is here if our csv file has invalid data.
+                        Invalid data means if the big csv file contains anything different from a number in the second column.
+                        If it does, skips the current line.
+                        */
                         firstLines[j] = readers.get(j).readLine();
                     }
                 }
             }
 
-            //Checks if all firstLines are null, if a firstLine is null it means that its corresponding reader has finished reading.
+            //Checks if all firstLines are null, if a firstLine is null it means that its corresponding reader has finished reading and increments count.
 
             for (int i = 0; i < slices; i++) {
                 if (firstLines[i] != null) {
@@ -142,7 +148,6 @@ public class ExternalSorter {
                 } else {
                     count++;
                 }
-
             }
 
             //Closes all readers.

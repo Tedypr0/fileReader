@@ -14,7 +14,7 @@ public class UniqueEventsQueue<T> {
     }
 
     public synchronized void add(T element) throws InterruptedException {
-        while(queue.size() == capacity){
+        while (queue.size() == capacity) {
             wait();
         }
         queue.add(element);
@@ -39,7 +39,7 @@ public class UniqueEventsQueue<T> {
         return queue.peek();
     }
 
-    public int size(){
+    public int size() {
         return size;
     }
 }
