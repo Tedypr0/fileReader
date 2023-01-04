@@ -22,7 +22,7 @@ public class UniqueEventsQueue<T> {
         notifyAll();
     }
 
-    public synchronized T get() throws InterruptedException {
+    public synchronized T poll() throws InterruptedException {
         while (queue.isEmpty()) {
             wait();
         }
@@ -30,6 +30,13 @@ public class UniqueEventsQueue<T> {
         size--;
         notify();
         return elementToRemove;
+    }
+
+    public synchronized T peek() throws InterruptedException {
+        while (queue.isEmpty()) {
+            wait();
+        }
+        return queue.peek();
     }
 
     public int size(){

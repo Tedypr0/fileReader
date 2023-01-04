@@ -1,6 +1,5 @@
 package org.example.filereader;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -17,7 +16,7 @@ public class Consumer extends Thread {
     public void run() {
         do
             try {
-                String[] elements = queue.get();
+                String[] elements = queue.poll();
                 ExternalSorter.mergesort(elements);
                 ExternalSorter.writeSortedFile(elements, counter.getAndIncrement());
             } catch (IOException | InterruptedException e) {
