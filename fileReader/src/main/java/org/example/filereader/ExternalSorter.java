@@ -9,6 +9,9 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /*
+        Sorts a big csv file containing numbers on the second column and writes them in a new file.
+        If there isn't a number in the second column the algorithm skips this line.
+
     TODO: Remove Readers which have already finished executing.
           Remove the corresponding firstLines when a reader has finished its work.  firstLines saves every file's first line.
           Break the while loop when bufferedReaders array reaches 0
@@ -21,7 +24,7 @@ public class ExternalSorter {
     private static final UniqueEventsQueue<String[]> queue = new UniqueEventsQueue<>(40);
     static int lines = 0;
     static int maxElements = 200000;    //Write here how many lines each temp file will have.
-    static String sortFileDir = "C:\\csv\\10m.csv";
+    static String sortFileDir = "C:\\csv\\100m.csv";
     static String fileNames = "sortedGeneration";
     static String tempFileDir = "C:\\csv\\sortedFiles\\";
     static AtomicInteger counter = new AtomicInteger(0);
@@ -29,7 +32,7 @@ public class ExternalSorter {
 
     public static void main(String[] args) throws IOException, InterruptedException {
         long begin = System.currentTimeMillis();
-        int slices = 0;
+        int slices;
 
         FileReader lineFile = new FileReader(sortFileDir);
         BufferedReader lineCounter = new BufferedReader(lineFile);
@@ -39,13 +42,15 @@ public class ExternalSorter {
             try {
                 line = line.split(",")[1];
             } catch (ArrayIndexOutOfBoundsException ignored) {
-                //This catch is here if our csv file has invalid data.
+                /*This catch is here if our csv file has invalid data.
+                    Invalid data means if the big csv file contains anything different from a number in the second column.
+                */
                 continue;
             }
             lines++;
         }
         slices = (int) Math.ceil((double) lines / maxElements);
-        ArrayList<Consumer> threads = new ArrayList<>();
+        List<Consumer> threads = new ArrayList<>();
         for (int i = 0; i < threadPoolSize; i++) {
             threads.add(new Consumer(queue, counter, slices));
             threads.get(i).start();
@@ -107,13 +112,9 @@ public class ExternalSorter {
             for (int k = 0; k < slices; k++) {
                 if (firstLines[k] != null) {
                     elements = firstLines[k].split(",");
-                    try {
                         if (min >= Integer.parseInt(elements[1])) {
                             min = Integer.parseInt(elements[1]);
                         }
-                    } catch (ArrayIndexOutOfBoundsException ignored) {
-                        //This is here in case we have a wrong input.
-                    }
                 }
             }
             count = 0;
@@ -130,9 +131,6 @@ public class ExternalSorter {
                     } catch (ArrayIndexOutOfBoundsException ignored) {
                         firstLines[j] = readers.get(j).readLine();
                     }
-                } else {
-                    //remove reader at j element and close it.
-                    //remove firstLine at j element
                 }
             }
 
