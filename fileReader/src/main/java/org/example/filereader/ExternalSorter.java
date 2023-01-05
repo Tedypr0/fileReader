@@ -31,7 +31,7 @@ public class ExternalSorter {
     static int count = 0;
 
     public static void main(String[] args) {
-        long begin = System.currentTimeMillis();
+        long begin = System.nanoTime();
         int slices = 0;
         String line;
         List<Consumer> threads = new ArrayList<>();
@@ -144,6 +144,9 @@ public class ExternalSorter {
                             firstLines[j] = readers.get(j).readLine();
                         }
                     }
+                    // The slowest part of the algorithm depending on the input data
+                    // If data contains only unique numbers is the worst scenario
+                    // O(number of lines * slices)
                 }
 
                 //Checks if all firstLines are null, if a firstLine is null it means that its corresponding reader has finished reading and increments count.
@@ -156,7 +159,7 @@ public class ExternalSorter {
                     }
                 }
 
-                //Closes all readers.
+                //Closes all readers
                 if (count == slices) {
                     for (int i = 0; i < slices; i++) {
                         readers.get(i).close();
@@ -177,7 +180,7 @@ public class ExternalSorter {
             }
         }
 
-        System.out.printf("TIME: %d", (System.currentTimeMillis() - begin));
+        System.out.printf("TIME: %.2f", (System.nanoTime() - begin)/(Math.pow(10, 9)));
     }
 
     public static void merge(String[] strings, String[] temp, int from, int mid, int to) {
