@@ -146,7 +146,7 @@ public class ExternalSorter {
                     }
                     // The slowest part of the algorithm depending on the input data
                     // If data contains only unique numbers is the worst scenario
-                    // O(number of lines * slices)
+                    // O(number of lines * slices).
                 }
 
                 //Checks if all firstLines are null, if a firstLine is null it means that its corresponding reader has finished reading and increments count.
