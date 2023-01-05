@@ -30,32 +30,31 @@ public class ExternalSorter {
     static AtomicInteger counter = new AtomicInteger(0);
     static int count = 0;
 
-    public static void main(String[] args) throws IOException, InterruptedException {
+    public static void main(String[] args) {
         long begin = System.currentTimeMillis();
-        int slices;
-
-        FileReader lineFile = new FileReader(sortFileDir);
-        BufferedReader lineCounter = new BufferedReader(lineFile);
+        int slices = 0;
         String line;
-        // Count the lines of our file.
-        // O(number of lines) linear.
-        while ((line = lineCounter.readLine()) != null) {
-            if(line.split(",").length == 1){
-                continue;
-            }
-            lines++;
-        }
-        slices = (int) Math.ceil((double) lines / maxElements);
         List<Consumer> threads = new ArrayList<>();
-        for (int i = 0; i < threadPoolSize; i++) {
-            threads.add(new Consumer(queue, counter));
-            threads.get(i).start();
+        try (FileReader lineFile = new FileReader(sortFileDir);
+             BufferedReader lineCounter = new BufferedReader(lineFile)) {
 
+            // Count the lines of our file.
+            // O(number of lines) linear.
+            while ((line = lineCounter.readLine()) != null) {
+                if (line.split(",").length == 1) {
+                    continue;
+                }
+                lines++;
+            }
+            slices = (int) Math.ceil((double) lines / maxElements);
+
+            for (int i = 0; i < threadPoolSize; i++) {
+                threads.add(new Consumer(queue, counter));
+                threads.get(i).start();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
         }
-
-
-        lineFile.close();
-        lineCounter.close();
 
         try (FileReader fileToSort = new FileReader(sortFileDir); BufferedReader buffer = new BufferedReader(fileToSort)) {
             String[] elements = new String[maxElements];
@@ -71,7 +70,11 @@ public class ExternalSorter {
 
                 //Write slices
                 // sliceNumber++;
-                queue.add(elements);
+                try {
+                    queue.add(elements);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
 
                 //Checks if the last slice has to be less than maxElements and if it does, creates a new array with leftover elements.
                 if (i >= (slices - 2) && (lines % maxElements != 0)) {
@@ -82,75 +85,95 @@ public class ExternalSorter {
                     elements = new String[maxElements];
                 }
             }
+        } catch (IOException e) {
+            e.printStackTrace();
         }
 
         List<BufferedReader> readers = new ArrayList<>(slices);
         String[] firstLines = new String[slices];
-        for (Consumer thread : threads) {
-            thread.join();
+        try {
+            for (Consumer thread : threads) {
+                thread.join();
+            }
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
-
         // Creates and adds into an ArrayList readers for each temp file.
-        for (int i = 0; i < slices; i++) {
-            readers.add(new BufferedReader(new FileReader(String.format("%s%s%d.csv", tempFileDir, fileNames, i))));
-            line = readers.get(i).readLine();
-            firstLines[i] = line;
+        try {
+            for (int i = 0; i < slices; i++) {
+                readers.add(new BufferedReader(new FileReader(String.format("%s%s%d.csv", tempFileDir, fileNames, i))));
+                line = readers.get(i).readLine();
+                firstLines[i] = line;
+            }
+        } catch (IOException f) {
+            f.printStackTrace();
+            try {
+                for (BufferedReader reader : readers) {
+                    reader.close();
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
 
         int min;
         String[] elements;
-        BufferedWriter writer = new BufferedWriter(new FileWriter(String.format("%sresult.csv", tempFileDir)));
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(String.format("%sresult.csv", tempFileDir)))) {
 
-        //Reads all Files
-        // O(Number of readers * maxElements) which equals to the number of lines in the csv file.
-        while (true) {
-            min = Integer.MAX_VALUE;
-            //Reads finds min value for each reader
-            for (int k = 0; k < slices; k++) {
-                if (firstLines[k] != null) {
-                    elements = firstLines[k].split(",");
-                    if (min >= Integer.parseInt(elements[1])) {
-                        min = Integer.parseInt(elements[1]);
+            //Reads all Files
+            // O(Number of readers * maxElements) which equals to the number of lines in the csv file.
+            while (true) {
+                min = Integer.MAX_VALUE;
+                //Reads finds min value for each reader
+                for (int k = 0; k < slices; k++) {
+                    if (firstLines[k] != null) {
+                        elements = firstLines[k].split(",");
+                        if (min >= Integer.parseInt(elements[1])) {
+                            min = Integer.parseInt(elements[1]);
+                        }
                     }
                 }
-            }
-            count = 0;
-            //Writes every value which is == to min and continues on.
-            for (int j = 0; j < slices; j++) {
-                if (firstLines[j] != null) {
-                    elements = firstLines[j].split(",");
+                count = 0;
+                //Writes every value which is == to min and continues on.
+                for (int j = 0; j < slices; j++) {
+                    if (firstLines[j] != null) {
+                        elements = firstLines[j].split(",");
                         if (min == Integer.parseInt(elements[1])) {
                             writer.write(firstLines[j]);
                             writer.newLine();
                             firstLines[j] = readers.get(j).readLine();
                         }
-
-                        /*This catch is here if our csv file has invalid data.
-                        Invalid data means if the big csv file contains anything different from a number in the second column.
-                        If it does, skips the current line.
-                        */
-
+                    }
                 }
-            }
 
-            //Checks if all firstLines are null, if a firstLine is null it means that its corresponding reader has finished reading and increments count.
+                //Checks if all firstLines are null, if a firstLine is null it means that its corresponding reader has finished reading and increments count.
 
-            for (int i = 0; i < slices; i++) {
-                if (firstLines[i] != null) {
-                    break;
-                } else {
-                    count++;
-                }
-            }
-
-            //Closes all readers.
-            if (count == slices) {
                 for (int i = 0; i < slices; i++) {
-                    readers.get(i).close();
-                    Files.delete(Paths.get(String.format("%s%s%d.csv", tempFileDir, fileNames, i)));
+                    if (firstLines[i] != null) {
+                        break;
+                    } else {
+                        count++;
+                    }
                 }
-                writer.close();
-                break;
+
+                //Closes all readers.
+                if (count == slices) {
+                    for (int i = 0; i < slices; i++) {
+                        readers.get(i).close();
+                        Files.delete(Paths.get(String.format("%s%s%d.csv", tempFileDir, fileNames, i)));
+                    }
+                    break;
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            for (BufferedReader reader : readers) {
+                try {
+                    reader.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
         }
 
