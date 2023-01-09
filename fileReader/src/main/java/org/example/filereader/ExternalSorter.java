@@ -2,6 +2,7 @@ package org.example.filereader;
 
 import java.io.*;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -20,15 +21,15 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 
 public class ExternalSorter {
-    private static final int threadPoolSize = 8;
-    private static final UniqueEventsQueue<String[]> queue = new UniqueEventsQueue<>(40);
-    static int lines = 0;
+    private static final int threadPoolSize = 16;
+    private static final UniqueEventsQueue<String[]> queue = new UniqueEventsQueue<>(32);
+    static long lines = 0;
     static int maxElements = 200000;    //Write here how many lines each temp file will have.
-    static String sortFileDir = "C:\\csv\\10m.csv";
+    static String sortFileDir = "C:\\csv\\5b.csv";
     static String fileNames = "sortedGeneration";
     static String tempFileDir = "C:\\csv\\sortedFiles\\";
     static AtomicInteger counter = new AtomicInteger(0);
-    static int count = 0;
+    static long count = 0;
 
     public static void main(String[] args) {
         long begin = System.nanoTime();
@@ -37,14 +38,17 @@ public class ExternalSorter {
         List<Consumer> threads = new ArrayList<>();
         try (FileReader lineFile = new FileReader(sortFileDir);
              BufferedReader lineCounter = new BufferedReader(lineFile)) {
-
             // Count the lines of our file.
             // O(number of lines) linear.
-            while ((line = lineCounter.readLine()) != null) {
-                if (line.split(",").length == 1) {
-                    continue;
+            try {
+                while ((line = lineCounter.readLine()) != null) {
+                    if (line.split(",").length == 1) {
+                        continue;
+                    }
+                    lines++;
                 }
-                lines++;
+            } catch (OutOfMemoryError e) {
+                System.out.println(lines);
             }
             slices = (int) Math.ceil((double) lines / maxElements);
 
@@ -78,7 +82,7 @@ public class ExternalSorter {
 
                 //Checks if the last slice has to be less than maxElements and if it does, creates a new array with leftover elements.
                 if (i >= (slices - 2) && (lines % maxElements != 0)) {
-                    lastFile = lines % maxElements;
+                    lastFile = (int) (lines % maxElements);
                     elements = new String[lastFile];
 
                 } else {
@@ -106,7 +110,6 @@ public class ExternalSorter {
                 firstLines[i] = line;
             }
         } catch (IOException f) {
-            f.printStackTrace();
             try {
                 for (BufferedReader reader : readers) {
                     reader.close();
@@ -131,6 +134,8 @@ public class ExternalSorter {
                         if (min >= Integer.parseInt(elements[1])) {
                             min = Integer.parseInt(elements[1]);
                         }
+                    }else{
+                        CloseAndDeleteFile(readers, k);
                     }
                 }
                 count = 0;
@@ -143,6 +148,8 @@ public class ExternalSorter {
                             writer.newLine();
                             firstLines[j] = readers.get(j).readLine();
                         }
+                    }else{
+                        CloseAndDeleteFile(readers, j);
                     }
                     // The slowest part of the algorithm depending on the input data
                     // If data contains only unique numbers is the worst scenario
@@ -159,11 +166,10 @@ public class ExternalSorter {
                     }
                 }
 
-                //Closes all readers
+                //Closes all readers final iteration to check
                 if (count == slices) {
                     for (int i = 0; i < slices; i++) {
-                        readers.get(i).close();
-                        Files.delete(Paths.get(String.format("%s%s%d.csv", tempFileDir, fileNames, i)));
+                        CloseAndDeleteFile(readers, i);
                     }
                     break;
                 }
@@ -180,7 +186,7 @@ public class ExternalSorter {
             }
         }
 
-        System.out.printf("TIME: %.2f", (System.nanoTime() - begin)/(Math.pow(10, 9)));
+        System.out.printf("TIME: %.2f", (System.nanoTime() - begin) / (Math.pow(10, 9)));
     }
 
     public static void merge(String[] strings, String[] temp, int from, int mid, int to) {
@@ -224,6 +230,15 @@ public class ExternalSorter {
                 writer.write(a);
                 writer.newLine();
             }
+        }
+    }
+
+    public static void CloseAndDeleteFile(List<BufferedReader> readers, int index) {
+        try {
+            readers.get(index).close();
+            Files.delete(Paths.get(String.format("%s%s%d.csv", tempFileDir, fileNames, index)));
+        } catch (NoSuchFileException ignored) {} catch (IOException e) {
+            e.printStackTrace();
         }
     }
 }
