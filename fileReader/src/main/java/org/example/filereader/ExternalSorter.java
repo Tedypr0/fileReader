@@ -46,12 +46,12 @@ public class ExternalSorter {
 
             // Count the lines of our file.
             // O(number of lines) linear.
-                while ((line = lineCounter.readLine()) != null) {
-                    if (line.split(",").length == 1) {
-                        continue;
-                    }
-                    lines++;
+            while ((line = lineCounter.readLine()) != null) {
+                if (line.split(",").length == 1) {
+                    continue;
                 }
+                lines++;
+            }
             slices = (int) Math.ceil((double) lines / maxElements);
 
 
@@ -86,8 +86,6 @@ public class ExternalSorter {
             }
 
             // User input validation that input data exists as an option and set indexes of which elements are going to be sorted
-
-
 
 
             intOrNot = false;
@@ -175,29 +173,28 @@ public class ExternalSorter {
                 for (int k = 0; k < slices; k++) {
                     if (firstLines[k] != null) {
                         elements = firstLines[k].split(",");
-                            if (isIndexIntOrNot()) {
-                                if (ascOrDesc.equalsIgnoreCase("asc")) {
-                                    if (min >= Integer.parseInt(elements[userSortDecisionIndex])) {
-                                        min = Integer.parseInt(elements[userSortDecisionIndex]);
-                                    }
-                                } else {
-                                    if (min <= Integer.parseInt(elements[userSortDecisionIndex])) {
-                                        min = Integer.parseInt(elements[userSortDecisionIndex]);
-                                    }
+                        if (isIndexIntOrNot()) {
+                            if (ascOrDesc.equalsIgnoreCase("asc")) {
+                                if (min >= Integer.parseInt(elements[userSortDecisionIndex])) {
+                                    min = Integer.parseInt(elements[userSortDecisionIndex]);
                                 }
                             } else {
-                                if (ascOrDesc.equalsIgnoreCase("asc")) {
-                                    if (stringToAdd.compareTo(elements[userSortDecisionIndex]) > 0) {
-                                        stringToAdd = elements[userSortDecisionIndex];
-                                    }
-                                } else {
-                                    if (stringToAdd.compareTo(elements[userSortDecisionIndex]) < 0) {
-                                        stringToAdd = elements[userSortDecisionIndex];
-                                    }
+                                if (min <= Integer.parseInt(elements[userSortDecisionIndex])) {
+                                    min = Integer.parseInt(elements[userSortDecisionIndex]);
+                                }
+                            }
+                        } else {
+                            if (ascOrDesc.equalsIgnoreCase("asc")) {
+                                if (stringToAdd.compareTo(elements[userSortDecisionIndex]) > 0) {
+                                    stringToAdd = elements[userSortDecisionIndex];
+                                }
+                            } else {
+                                if (stringToAdd.compareTo(elements[userSortDecisionIndex]) < 0) {
+                                    stringToAdd = elements[userSortDecisionIndex];
                                 }
                             }
                         }
-                    else {
+                    } else {
                         try {
                             closeAndDeleteFile(readers, k);
                         } catch (IndexOutOfBoundsException ignored) {
@@ -230,8 +227,7 @@ public class ExternalSorter {
                                 firstLines[j] = readers.get(j).readLine();
                             }
                         }
-                    }
-                    else {
+                    } else {
                         closeAndDeleteFile(readers, j);
                     }
                     // The slowest part of the algorithm depending on the input data
@@ -273,19 +269,20 @@ public class ExternalSorter {
     }
 
     public static void setValuesToIntOrNot(int index) {
-            try {
-                Integer.parseInt(areInt.split(",")[index]);
-                    intOrNot = true;
-            } catch (NumberFormatException ignored) {}
+        try {
+            Integer.parseInt(areInt.split(",")[index]);
+            intOrNot = true;
+        } catch (NumberFormatException ignored) {
+        }
     }
 
     public static int setValuesToUserSortDecisionIndexes(String[] sortOptions, String userSortDecision) {
-       int result = 0;
-       boolean isFound = false;
-            for (int i = 0; i < sortOptions.length; i++) {
-                if (sortOptions[i].contains(userSortDecision)) {
-                    result = i;
-                 isFound = true;
+        int result = 0;
+        boolean isFound = false;
+        for (int i = 0; i < sortOptions.length; i++) {
+            if (sortOptions[i].contains(userSortDecision)) {
+                result = i;
+                isFound = true;
             }
         }
 
@@ -304,10 +301,10 @@ public class ExternalSorter {
             for (int i = low; i < high; i += 2 * m) {
                 int mid = i + m - 1;
                 int to = Integer.min(i + 2 * m - 1, high);
-                    merge(str, temp, i, mid, to, sortIndex, isInt);
+                merge(str, temp, i, mid, to, sortIndex, isInt);
             }
         }
-        if(ascOrDesc.equalsIgnoreCase("desc")){
+        if (ascOrDesc.equalsIgnoreCase("desc")) {
             arrayReverse(str);
         }
     }
@@ -325,20 +322,20 @@ public class ExternalSorter {
                     set temp array with the corresponding val.
                  */
 
-                if (isInt) {
-                    if ((Integer.parseInt(leftElement[sortIndex])) < Integer.parseInt(rightElement[sortIndex])) {
-                        temp[k++] = strings[i++];
-                    } else {
-                        temp[k++] = strings[j++];
-                    }
+            if (isInt) {
+                if ((Integer.parseInt(leftElement[sortIndex])) < Integer.parseInt(rightElement[sortIndex])) {
+                    temp[k++] = strings[i++];
                 } else {
-                    if (leftElement[sortIndex].compareTo(rightElement[sortIndex]) < 0) {
-                        temp[k++] = strings[i++];
-                    } else {
-                        temp[k++] = strings[j++];
-                    }
+                    temp[k++] = strings[j++];
+                }
+            } else {
+                if (leftElement[sortIndex].compareTo(rightElement[sortIndex]) < 0) {
+                    temp[k++] = strings[i++];
+                } else {
+                    temp[k++] = strings[j++];
                 }
             }
+        }
 
         while (i < strings.length && i <= mid) {
             temp[k++] = strings[i++];
@@ -349,7 +346,7 @@ public class ExternalSorter {
         }
     }
 
-    public static boolean isIndexIntOrNot(){
+    public static boolean isIndexIntOrNot() {
         return intOrNot;
     }
 

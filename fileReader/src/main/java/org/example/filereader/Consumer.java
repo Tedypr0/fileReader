@@ -23,7 +23,7 @@ public class Consumer extends Thread {
         do
             try {
                 String[] elements = queue.poll();
-                    ExternalSorter.mergesort(elements, order, sortIndex, isInt);
+                ExternalSorter.mergesort(elements, order, sortIndex, isInt);
                 ExternalSorter.writeSortedFile(elements, counter.getAndIncrement());
             } catch (IOException | InterruptedException e) {
                 throw new RuntimeException();
