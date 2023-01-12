@@ -4,10 +4,7 @@ import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Scanner;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /*
@@ -26,14 +23,14 @@ public class ExternalSorter {
     private static final UniqueEventsQueue<String[]> queue = new UniqueEventsQueue<>(32);
     static long lines = 1;
     static int maxElements = 5;    //Write here how many lines each temp file will have.
-    static String sortFileDir = "C:\\csv\\10rev.csv";
+    static String sortFileDir = "C:\\csv\\10.csv";
     static String fileNames = "sortedGeneration";
     static String tempFileDir = "C:\\csv\\sortedFiles\\";
     static AtomicInteger counter = new AtomicInteger(0);
     static long count = 0;
-    private static int[] userSortDecisionIndexes;
-    private static boolean[] intOrNot;
-    private static String[] areInt;
+    public static int userSortDecisionIndex;
+    private static boolean intOrNot;
+    private static String areInt;
     private static String ascOrDesc;
 
     public static void main(String[] args) {
@@ -45,27 +42,19 @@ public class ExternalSorter {
         try (FileReader lineFile = new FileReader(sortFileDir); BufferedReader lineCounter = new BufferedReader(lineFile)) {
             firstRow = lineCounter.readLine();
 
-            areInt = lineCounter.readLine().split(",");
-
+            areInt = lineCounter.readLine();
 
             // Count the lines of our file.
             // O(number of lines) linear.
-            try {
                 while ((line = lineCounter.readLine()) != null) {
                     if (line.split(",").length == 1) {
                         continue;
                     }
                     lines++;
                 }
-            } catch (OutOfMemoryError e) {
-                System.out.println(lines);
-            }
             slices = (int) Math.ceil((double) lines / maxElements);
 
-            for (int i = 0; i < threadPoolSize; i++) {
-                threads.add(new Consumer(queue, counter));
-                threads.get(i).start();
-            }
+
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -81,50 +70,30 @@ public class ExternalSorter {
                 Wait for the user to select by which column/s he wants to sort by
                 If nothing is given as an input or it's wrong it will sort by first columns
              */
-            System.out.println("Write what you want to sort by separating each word with a comma");
+            System.out.println("Write what you want to sort by.");
             System.out.printf("You can sort by %s%n", Arrays.toString(sortOptions));
-            String[] userSortDecision;
+            String userSortDecision;
             try (Scanner scanner = new Scanner(System.in)) {
-                userSortDecision = scanner.nextLine().split(",");
+                userSortDecision = scanner.nextLine();
                 System.out.println("Write in what order you want to sort: asc or desc");
                 ascOrDesc = scanner.nextLine();
             }
 
-            userSortDecisionIndexes = new int[userSortDecision.length];
+            userSortDecisionIndex = setValuesToUserSortDecisionIndexes(sortOptions, userSortDecision);
+            for (int i = 0; i < threadPoolSize; i++) {
+                threads.add(new Consumer(queue, counter, ascOrDesc, userSortDecisionIndex, intOrNot));
+                threads.get(i).start();
+            }
 
             // User input validation that input data exists as an option and set indexes of which elements are going to be sorted
 
-            int counter = 0;
-            for (String s : userSortDecision) {
-                for (int i = 0; i < sortOptions.length; i++) {
-                    if (sortOptions[i].contains(s)) {
-                        userSortDecisionIndexes[counter] = i;
-                        counter++;
-                        break;
-                    }
-                }
-                if (counter == userSortDecision.length) {
-                    break;
-                }
-            }
-            if (counter != userSortDecision.length) {
-                System.exit(-1);
-            }
 
-            Arrays.sort(userSortDecisionIndexes);
-            intOrNot = new boolean[userSortDecisionIndexes.length];
+
+
+            intOrNot = false;
+
             // Find out which column is an integer or a string
-            for (int num : userSortDecisionIndexes) {
-                try {
-                    Integer.parseInt(areInt[num]);
-                    if(userSortDecisionIndexes.length == 1){
-                        intOrNot[0] = true;
-                    }else {
-                        intOrNot[num] = true;
-                    }
-                } catch (NumberFormatException ignored) {
-                }
-            }
+            setValuesToIntOrNot(userSortDecisionIndex);
 
             // O(slices*lastFile) complexity which is linear.
             for (int i = 0; i < slices; i++) {
@@ -135,6 +104,7 @@ public class ExternalSorter {
 
                 //Write slices
                 // sliceNumber++;
+
                 try {
                     queue.add(elements);
                 } catch (InterruptedException e) {
@@ -181,7 +151,6 @@ public class ExternalSorter {
         }
         //Introduce a second var for when comparing strings.
         int min;
-        int stringComparisonMin;
         String stringToAdd;
         String[] elements;
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(String.format("%sresult.csv", tempFileDir)))) {
@@ -194,46 +163,41 @@ public class ExternalSorter {
             while (true) {
                 if (ascOrDesc.equalsIgnoreCase("asc")) {
                     min = Integer.MAX_VALUE;
-                    stringComparisonMin = Integer.MAX_VALUE;
                     stringToAdd = "~";
                 } else {
                     min = Integer.MIN_VALUE;
-                    stringComparisonMin = Integer.MIN_VALUE;
                     stringToAdd = "!";
                 }
+
 
                 // Reads finds min value for each reader
                 //
                 for (int k = 0; k < slices; k++) {
                     if (firstLines[k] != null) {
                         elements = firstLines[k].split(",");
-                        for (int i = 0; i < intOrNot.length; i++) {
-                            int index = userSortDecisionIndexes[i];
-                            if (intOrNot[i]) {
+                            if (isIndexIntOrNot()) {
                                 if (ascOrDesc.equalsIgnoreCase("asc")) {
-                                    if (min >= Integer.parseInt(elements[index])) {
-                                        min = Integer.parseInt(elements[index]);
+                                    if (min >= Integer.parseInt(elements[userSortDecisionIndex])) {
+                                        min = Integer.parseInt(elements[userSortDecisionIndex]);
                                     }
                                 } else {
-                                    if (min <= Integer.parseInt(elements[index])) {
-                                        min = Integer.parseInt(elements[index]);
+                                    if (min <= Integer.parseInt(elements[userSortDecisionIndex])) {
+                                        min = Integer.parseInt(elements[userSortDecisionIndex]);
                                     }
                                 }
                             } else {
                                 if (ascOrDesc.equalsIgnoreCase("asc")) {
-                                    if (stringComparisonMin > stringToAdd.compareTo(elements[index]) && stringToAdd.compareTo(elements[index])>0) {
-                                        stringComparisonMin = stringToAdd.compareTo(elements[index]);
-                                        stringToAdd = elements[index];
+                                    if (stringToAdd.compareTo(elements[userSortDecisionIndex]) > 0) {
+                                        stringToAdd = elements[userSortDecisionIndex];
                                     }
                                 } else {
-                                    if (stringComparisonMin <= elements[index].compareTo(stringToAdd)) {
-                                        stringComparisonMin = elements[index].compareTo(stringToAdd);
-                                        stringToAdd = elements[index];
+                                    if (stringToAdd.compareTo(elements[userSortDecisionIndex]) < 0) {
+                                        stringToAdd = elements[userSortDecisionIndex];
                                     }
                                 }
                             }
                         }
-                    } else {
+                    else {
                         try {
                             closeAndDeleteFile(readers, k);
                         } catch (IndexOutOfBoundsException ignored) {
@@ -248,30 +212,26 @@ public class ExternalSorter {
                     if (firstLines[j] != null) {
                         elements = firstLines[j].split(",");
                         // This will be only for integers. Need something for strings
-                        for (int i = 0; i < intOrNot.length; i++) {
-                            if (firstLines[j] == null) {
-                                break;
-                            }
-                            int index = userSortDecisionIndexes[i];
-                            if (intOrNot[i]) {
-                                if (min == Integer.parseInt(elements[index])) {
-                                    writer.write(firstLines[j]);
-                                    writer.newLine();
-                                    try {
-                                        firstLines[j] = readers.get(j).readLine();
-                                    } catch (IOException ignored) {
-                                        System.out.println("IO");
-                                    }
-                                }
-                            } else {
-                                if (stringToAdd.equals(elements[index])) {
-                                    writer.write(firstLines[j]);
-                                    writer.newLine();
+
+                        if (intOrNot) {
+                            if (min == Integer.parseInt(elements[userSortDecisionIndex])) {
+                                writer.write(firstLines[j]);
+                                writer.newLine();
+                                try {
                                     firstLines[j] = readers.get(j).readLine();
+                                } catch (IOException ignored) {
+                                    System.out.println("IO");
                                 }
+                            }
+                        } else {
+                            if (stringToAdd.equals(elements[userSortDecisionIndex])) {
+                                writer.write(firstLines[j]);
+                                writer.newLine();
+                                firstLines[j] = readers.get(j).readLine();
                             }
                         }
-                    } else {
+                    }
+                    else {
                         closeAndDeleteFile(readers, j);
                     }
                     // The slowest part of the algorithm depending on the input data
@@ -312,7 +272,30 @@ public class ExternalSorter {
         System.out.printf("TIME: %.2f", (System.nanoTime() - begin) / (Math.pow(10, 9)));
     }
 
-    public static void mergesort(String[] str) {
+    public static void setValuesToIntOrNot(int index) {
+            try {
+                Integer.parseInt(areInt.split(",")[index]);
+                    intOrNot = true;
+            } catch (NumberFormatException ignored) {}
+    }
+
+    public static int setValuesToUserSortDecisionIndexes(String[] sortOptions, String userSortDecision) {
+       int result = 0;
+       boolean isFound = false;
+            for (int i = 0; i < sortOptions.length; i++) {
+                if (sortOptions[i].contains(userSortDecision)) {
+                    result = i;
+                 isFound = true;
+            }
+        }
+
+        if (!isFound) {
+            System.exit(-1);
+        }
+        return result;
+    }
+
+    public static void mergesort(String[] str, String ascOrDesc, int sortIndex, boolean isInt) {
         int low = 0;
         int high = str.length - 1;
 
@@ -321,12 +304,15 @@ public class ExternalSorter {
             for (int i = low; i < high; i += 2 * m) {
                 int mid = i + m - 1;
                 int to = Integer.min(i + 2 * m - 1, high);
-                merge(str, temp, i, mid, to);
+                    merge(str, temp, i, mid, to, sortIndex, isInt);
             }
+        }
+        if(ascOrDesc.equalsIgnoreCase("desc")){
+            arrayReverse(str);
         }
     }
 
-    public static void merge(String[] strings, String[] temp, int from, int mid, int to) {
+    public static void merge(String[] strings, String[] temp, int from, int mid, int to, int sortIndex, boolean isInt) {
         // Must add comparison logic for different elements => int and strings.
         int k = from, i = from, j = mid + 1;
         while (i <= mid && j <= to) {
@@ -334,50 +320,26 @@ public class ExternalSorter {
             String[] leftElement = strings[i].split(",");
             String[] rightElement = strings[j].split(",");
 
-            if (ascOrDesc.equalsIgnoreCase("asc")) {
                 /* switch for int or not
                     loop to call method for string or int for different sorting options
                     set temp array with the corresponding val.
                  */
-                for (int p = 0; p < userSortDecisionIndexes.length; p++) {
-                    if (intOrNot[p]) {
-                        if ((Integer.parseInt(leftElement[userSortDecisionIndexes[p]])) < Integer.parseInt(rightElement[userSortDecisionIndexes[p]])) {
-                            temp[k++] = strings[i++];
-                        } else {
-                            temp[k++] = strings[j++];
-                        }
+
+                if (isInt) {
+                    if ((Integer.parseInt(leftElement[sortIndex])) < Integer.parseInt(rightElement[sortIndex])) {
+                        temp[k++] = strings[i++];
                     } else {
-                        if (leftElement[userSortDecisionIndexes[p]].compareTo(rightElement[userSortDecisionIndexes[p]]) < 0) {
-                            temp[k++] = strings[i++];
-                        } else {
-                            temp[k++] = strings[j++];
-                        }
+                        temp[k++] = strings[j++];
                     }
-                }
-
-            } else {
-                /* switch for int or not
-                    loop to call method for string or int for different sorting options
-                 */
-
-                for (int p = 0; p < userSortDecisionIndexes.length; p++) {
-                    if (intOrNot[p]) {
-                        if ((Integer.parseInt(leftElement[userSortDecisionIndexes[p]])) < Integer.parseInt(rightElement[userSortDecisionIndexes[p]])) {
-                            temp[k++] = strings[j++];
-
-                        } else {
-                            temp[k++] = strings[i++];
-                        }
+                } else {
+                    if (leftElement[sortIndex].compareTo(rightElement[sortIndex]) < 0) {
+                        temp[k++] = strings[i++];
                     } else {
-                        if (leftElement[userSortDecisionIndexes[p]].compareTo(rightElement[userSortDecisionIndexes[p]]) > 0) {
-                            temp[k++] = strings[i++];
-                        } else {
-                            temp[k++] = strings[j++];
-                        }
+                        temp[k++] = strings[j++];
                     }
                 }
             }
-        }
+
         while (i < strings.length && i <= mid) {
             temp[k++] = strings[i++];
         }
@@ -387,6 +349,22 @@ public class ExternalSorter {
         }
     }
 
+    public static boolean isIndexIntOrNot(){
+        return intOrNot;
+    }
+
+    private static void arrayReverse(String[] strings) {
+        int first = 0;
+        int last = strings.length - 1;
+        String tempString;
+        while (first < last) {
+            tempString = strings[first];
+            strings[first] = strings[last];
+            strings[last] = tempString;
+            first++;
+            last--;
+        }
+    }
 
     public synchronized static void writeSortedFile(String[] elements, int sliceNumber) throws IOException {
         try (FileWriter sortedFile = new FileWriter(String.format("C:\\csv\\sortedFiles\\sortedGeneration%d.csv", sliceNumber)); BufferedWriter writer = new BufferedWriter(sortedFile)) {
