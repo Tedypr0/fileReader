@@ -65,11 +65,6 @@ public class ExternalSorter {
             String[] sortOptions = buffer.readLine().split(",");
             int lastFile = maxElements;
 
-            /*
-                sortOptions gets the first line and it should be printed
-                Wait for the user to select by which column/s he wants to sort by
-                If nothing is given as an input or it's wrong it will sort by first columns
-             */
             System.out.println("Write what you want to sort by.");
             System.out.printf("You can sort by %s%n", Arrays.toString(sortOptions));
             String userSortDecision;
@@ -91,7 +86,11 @@ public class ExternalSorter {
             intOrNot = false;
 
             // Find out which column is an integer or a string
-            setValuesToIntOrNot(userSortDecisionIndex);
+            try {
+                Integer.parseInt(areInt.split(",")[userSortDecisionIndex]);
+                intOrNot = true;
+            } catch (NumberFormatException ignored) {
+            }
 
             // O(slices*lastFile) complexity which is linear.
             for (int i = 0; i < slices; i++) {
@@ -173,7 +172,7 @@ public class ExternalSorter {
                 for (int k = 0; k < slices; k++) {
                     if (firstLines[k] != null) {
                         elements = firstLines[k].split(",");
-                        if (isIndexIntOrNot()) {
+                        if (intOrNot) {
                             if (ascOrDesc.equalsIgnoreCase("asc")) {
                                 if (min >= Integer.parseInt(elements[userSortDecisionIndex])) {
                                     min = Integer.parseInt(elements[userSortDecisionIndex]);
@@ -268,26 +267,12 @@ public class ExternalSorter {
         System.out.printf("TIME: %.2f", (System.nanoTime() - begin) / (Math.pow(10, 9)));
     }
 
-    public static void setValuesToIntOrNot(int index) {
-        try {
-            Integer.parseInt(areInt.split(",")[index]);
-            intOrNot = true;
-        } catch (NumberFormatException ignored) {
-        }
-    }
-
     public static int setValuesToUserSortDecisionIndexes(String[] sortOptions, String userSortDecision) {
         int result = 0;
-        boolean isFound = false;
         for (int i = 0; i < sortOptions.length; i++) {
-            if (sortOptions[i].contains(userSortDecision)) {
+           if(sortOptions[i].equalsIgnoreCase(userSortDecision)){
                 result = i;
-                isFound = true;
             }
-        }
-
-        if (!isFound) {
-            System.exit(-1);
         }
         return result;
     }
@@ -313,14 +298,9 @@ public class ExternalSorter {
         // Must add comparison logic for different elements => int and strings.
         int k = from, i = from, j = mid + 1;
         while (i <= mid && j <= to) {
-            // Logic or method call for comparison of different columns
+
             String[] leftElement = strings[i].split(",");
             String[] rightElement = strings[j].split(",");
-
-                /* switch for int or not
-                    loop to call method for string or int for different sorting options
-                    set temp array with the corresponding val.
-                 */
 
             if (isInt) {
                 if ((Integer.parseInt(leftElement[sortIndex])) < Integer.parseInt(rightElement[sortIndex])) {
@@ -346,10 +326,6 @@ public class ExternalSorter {
         }
     }
 
-    public static boolean isIndexIntOrNot() {
-        return intOrNot;
-    }
-
     private static void arrayReverse(String[] strings) {
         int first = 0;
         int last = strings.length - 1;
@@ -364,12 +340,12 @@ public class ExternalSorter {
     }
 
     public synchronized static void writeSortedFile(String[] elements, int sliceNumber) throws IOException {
-        try (FileWriter sortedFile = new FileWriter(String.format("C:\\csv\\sortedFiles\\sortedGeneration%d.csv", sliceNumber)); BufferedWriter writer = new BufferedWriter(sortedFile)) {
+        try (FileWriter sortedFile = new FileWriter(String.format("C:\\csv\\sortedFiles\\sortedGeneration%d.csv", sliceNumber));
+             BufferedWriter writer = new BufferedWriter(sortedFile)) {
             for (String a : elements) {
                 writer.write(a);
                 writer.newLine();
             }
-            System.out.printf("sortedGeneration%d.csv has been created!%n", sliceNumber);
         }
     }
 
