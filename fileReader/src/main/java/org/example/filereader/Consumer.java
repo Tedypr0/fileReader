@@ -3,6 +3,9 @@ package org.example.filereader;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static org.example.filereader.ExternalSorter.mergesort;
+import static org.example.filereader.ExternalSorter.writeSortedFile;
+
 public class Consumer extends Thread {
     private final AtomicInteger counter;
     private final AtomicInteger neededToBeCreated;
@@ -25,11 +28,11 @@ public class Consumer extends Thread {
         do
             try {
                 String[] elements = queue.poll();
-                ExternalSorter.mergesort(elements, order, sortIndex, isInt);
-                ExternalSorter.writeSortedFile(elements, counter.getAndIncrement());
+                mergesort(elements, order, sortIndex, isInt);
+                writeSortedFile(elements, counter.getAndIncrement());
             } catch (IOException | InterruptedException e) {
                 throw new RuntimeException();
-            } while (queue.size() > 0 && counter.get() < neededToBeCreated.get());
+            } while ((queue.size() > 0) && (counter.get() < neededToBeCreated.get()));
         System.out.println(this.getName() + " has finished its' work!");
     }
 }
