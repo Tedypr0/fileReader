@@ -5,6 +5,7 @@ import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /*
@@ -19,11 +20,11 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 
 public class ExternalSorter {
-    private static final int threadPoolSize = 1;
+    private static long threadPoolSize = 1;
     private static final UniqueEventsQueue<String[]> queue = new UniqueEventsQueue<>(32);
     static long lines = 1;
-    static int maxElements = 5;    //Write here how many lines each temp file will have.
-    static String sortFileDir = "C:\\csv\\10.csv";
+    static long maxElements = 100000;    //Write here how many lines each temp file will have.
+    static String sortFileDir = "C:\\csv\\1m.csv";
     static String fileNames = "sortedGeneration";
     static String tempFileDir = "C:\\csv\\sortedFiles\\";
     static AtomicInteger counter = new AtomicInteger(0);
@@ -32,13 +33,13 @@ public class ExternalSorter {
     private static boolean intOrNot;
     private static String areInt;
     private static String ascOrDesc;
+    private static List<Consumer> threads = new ArrayList<>();
 
     public static void main(String[] args) {
         long begin = System.nanoTime();
         int slices = 0;
         String line;
         String firstRow = null;
-        List<Consumer> threads = new ArrayList<>();
         try (FileReader lineFile = new FileReader(sortFileDir); BufferedReader lineCounter = new BufferedReader(lineFile)) {
             firstRow = lineCounter.readLine();
 
@@ -59,11 +60,11 @@ public class ExternalSorter {
             e.printStackTrace();
         }
         try (FileReader fileToSort = new FileReader(sortFileDir); BufferedReader buffer = new BufferedReader(fileToSort)) {
-            String[] elements = new String[maxElements];
+
             //Saves first line of csv which contains sort options.
 
             String[] sortOptions = buffer.readLine().split(",");
-            int lastFile = maxElements;
+
 
             System.out.println("Write what you want to sort by.");
             System.out.printf("You can sort by %s%n", Arrays.toString(sortOptions));
@@ -75,10 +76,6 @@ public class ExternalSorter {
             }
 
             userSortDecisionIndex = setValuesToUserSortDecisionIndexes(sortOptions, userSortDecision);
-            for (int i = 0; i < threadPoolSize; i++) {
-                threads.add(new Consumer(queue, counter, ascOrDesc, userSortDecisionIndex, intOrNot));
-                threads.get(i).start();
-            }
 
             // User input validation that input data exists as an option and set indexes of which elements are going to be sorted
 
@@ -91,12 +88,14 @@ public class ExternalSorter {
                 intOrNot = true;
             } catch (NumberFormatException ignored) {
             }
-
+            threadCalculatorAndStarter(slices);
+            long lastFile = maxElements;
+            String[] elements = new String[(int) maxElements];
             // O(slices*lastFile) complexity which is linear.
             for (int i = 0; i < slices; i++) {
                 for (int j = 0; j < lastFile; j++) {
                     line = buffer.readLine();
-                    elements[j] = line;
+                    elements[j] = line.replaceAll("\\P{ASCII}","");
                 }
 
                 //Write slices
@@ -111,9 +110,9 @@ public class ExternalSorter {
                 //Checks if the last slice has to be less than maxElements and if it does, creates a new array with leftover elements.
                 if (i >= (slices - 2) && (lines % maxElements != 0)) {
                     lastFile = (int) (lines % maxElements);
-                    elements = new String[lastFile];
+                    elements = new String[(int) lastFile];
                 } else {
-                    elements = new String[maxElements];
+                    elements = new String[(int) maxElements];
                 }
             }
         } catch (IOException e) {
@@ -129,9 +128,9 @@ public class ExternalSorter {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
+
         // Creates and adds into an ArrayList readers for each temp file.
         try {
-
             for (int i = 0; i < slices; i++) {
                 readers.add(new BufferedReader(new FileReader(String.format("%s%s%d.csv", tempFileDir, fileNames, i))));
                 line = readers.get(i).readLine();
@@ -192,12 +191,6 @@ public class ExternalSorter {
                                     stringToAdd = elements[userSortDecisionIndex];
                                 }
                             }
-                        }
-                    } else {
-                        try {
-                            closeAndDeleteFile(readers, k);
-                        } catch (IndexOutOfBoundsException ignored) {
-                            System.out.println("?");
                         }
                     }
                 }
@@ -270,7 +263,7 @@ public class ExternalSorter {
     public static int setValuesToUserSortDecisionIndexes(String[] sortOptions, String userSortDecision) {
         int result = 0;
         for (int i = 0; i < sortOptions.length; i++) {
-           if(sortOptions[i].equalsIgnoreCase(userSortDecision)){
+            if (sortOptions[i].equalsIgnoreCase(userSortDecision)) {
                 result = i;
             }
         }
@@ -356,6 +349,21 @@ public class ExternalSorter {
         } catch (NoSuchFileException ignored) {
         } catch (IOException e) {
             e.printStackTrace();
+        }
+    }
+
+    private static void threadCalculatorAndStarter(int slices){
+        if(lines/maxElements == 0){
+            maxElements = lines;
+        }else if(lines/maxElements >7){
+            threadPoolSize = 8;
+        }else{
+            threadPoolSize = lines/maxElements;
+        }
+
+        for (int i = 0; i < threadPoolSize; i++) {
+            threads.add(new Consumer(queue, counter, new AtomicInteger(slices), ascOrDesc, userSortDecisionIndex, intOrNot));
+            threads.get(i).start();
         }
     }
 }
