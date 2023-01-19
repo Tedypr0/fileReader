@@ -93,6 +93,7 @@ public class ExternalSorter {
                 //Write slices
 
                 try {
+                    sleep(5000);
                     queue.add(elements);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
