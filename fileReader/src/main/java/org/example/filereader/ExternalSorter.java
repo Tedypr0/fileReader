@@ -37,28 +37,35 @@ public class ExternalSorter {
     private String ascOrDesc;
     private final List<Consumer> threads;
 
-     public ExternalSorter(){
-         threads = new ArrayList<>();
-         counter = new AtomicInteger(0);
-     }
+    public ExternalSorter() {
+        threads = new ArrayList<>();
+        counter = new AtomicInteger(0);
+    }
 
-    public  void start(){
+    public void start() {
         int slices = 0;
         String line;
         String firstRow = null;
         try (FileReader lineFile = new FileReader(sortFileDir); BufferedReader lineCounter = new BufferedReader(lineFile)) {
+            //Reads the first line of the csv file which usually contains (name,age,email..etc).
             firstRow = lineCounter.readLine();
+            // Read the second line which contains real data (Teodor,13)
             line = lineCounter.readLine();
             areInt = line;
 
             // Count the lines of our file.
             // O(number of lines) linear.
-          do{
-                if (line.split(",").length == 1) {
+            /* Counts the number of lines and checks if there is invalid data. Every line must be valid.
+             * If we have name and age as the first line
+             * (Teodor,5) is valid and (Teodor) is invalid.
+             */
+            do {
+                if (firstRow.split(",").length != line.split(",").length) {
                     continue;
                 }
                 lines++;
-            }while ((line = lineCounter.readLine())!= null);
+            } while ((line = lineCounter.readLine()) != null);
+            // Calculate into how many slices our file has to be split.
             slices = (int) Math.ceil((double) lines / maxElements);
 
         } catch (IOException e) {
@@ -68,11 +75,12 @@ public class ExternalSorter {
 
             //Saves first line of csv which contains sort options.
 
-            String sortOptions = buffer.readLine();
-            String[] sortOptionsArr = sortOptions.split(",");
+            assert firstRow != null;
+            String[] sortOptionsArr = firstRow.split(",");
             String[] userSortDecision;
-            userSortDecision = getUserInput(sortOptions);
+            userSortDecision = getUserInput(firstRow);
 
+            // Set the field index our user wants to sort by.
             userSortDecisionIndex = setValuesToUserSortDecisionIndexes(sortOptionsArr, userSortDecision);
 
             // User input validation that input data exists as an option and set indexes of which elements are going to be sorted
@@ -80,24 +88,32 @@ public class ExternalSorter {
 
             intOrNot = false;
 
-            // Find out which column is an integer or a string
+            // Find out if the user input sort by is an integer or a string.
             try {
                 Integer.parseInt(areInt.split(",")[userSortDecisionIndex]);
                 intOrNot = true;
-            } catch (NumberFormatException ignored) {}
+            } catch (NumberFormatException ignored) {
+            }
+            // Create and start threads.
             threadCalculatorAndStarter();
+
+            /* Variable for the last file number. Example: we have a file with 95 lines and every temp file is being split
+                into 20 lines. The last file is going to be 15 lines long.
+             */
+
             long lastFile = maxElements;
             String[] elements = new String[(int) maxElements];
             // O(slices*lastFile) complexity which is linear.
             for (int i = 0; i < slices; i++) {
-                    for (int j = 0; j < lastFile; j++) {
-                        line = buffer.readLine();
-                        elements[j] = line.replaceAll("\\P{ASCII}", "");
-                    }
+                for (int j = 0; j < lastFile; j++) {
+                    line = buffer.readLine();
+                    // Initialize every index of the elements array and replace all chars which do not belong in the ascii.
+                    elements[j] = line.replaceAll("\\P{ASCII}", "");
+                }
                 //Write slices
 
                 try {
-                    sleep(5000);
+                    //sleep(5000);
                     queue.add(elements);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
@@ -111,6 +127,7 @@ public class ExternalSorter {
                     elements = new String[(int) maxElements];
                 }
             }
+            // Adds the poisonpill array which stops the consumer from consuming.
             elements = new String[]{"POISONPILL"};
             queue.add(elements);
         } catch (IOException | InterruptedException e) {
@@ -166,10 +183,10 @@ public class ExternalSorter {
 
 
                 // Reads finds min value for each reader
-                //
                 for (int k = 0; k < slices; k++) {
                     if (firstLines[k] != null) {
                         elements = firstLines[k].split(",");
+                        // Checks if the value the user wants to sort by is an int or not.
                         if (intOrNot) {
                             if (ascOrDesc.equalsIgnoreCase("asc")) {
                                 if (min >= Integer.parseInt(elements[userSortDecisionIndex])) {
@@ -252,7 +269,7 @@ public class ExternalSorter {
 
     }
 
-    public  String[] getUserInput(String sortOptions) {
+    public String[] getUserInput(String sortOptions) {
         String[] userSortDecision = new String[2];
         System.out.println("Write what you want to sort by.");
         System.out.printf("You can sort by %s%n", sortOptions);
@@ -264,8 +281,8 @@ public class ExternalSorter {
         return userSortDecision;
     }
 
-
-    private  int setValuesToUserSortDecisionIndexes(String[] sortOptions, String[] userSortDecision) {
+    // Validate that we actually have the field the user wants to sort by.
+    private int setValuesToUserSortDecisionIndexes(String[] sortOptions, String[] userSortDecision) {
         int result = 0;
         for (int i = 0; i < sortOptions.length; i++) {
             if (sortOptions[i].equalsIgnoreCase(userSortDecision[0])) {
@@ -337,6 +354,7 @@ public class ExternalSorter {
         }
     }
 
+    //Writes and saves temp files.
     synchronized static void writeSortedFile(String[] elements, int sliceNumber) throws IOException {
         try (FileWriter sortedFile = new FileWriter(String.format("C:\\csv\\sortedFiles\\sortedGeneration%d.csv", sliceNumber));
              BufferedWriter writer = new BufferedWriter(sortedFile)) {
@@ -357,6 +375,10 @@ public class ExternalSorter {
         }
     }
 
+    /* Calculates how many threads we need for the current file, adds them to an ArrayList and starts them.
+        Min threads: 1
+        Маx threads: 8
+     */
     private void threadCalculatorAndStarter() {
         if (lines / maxElements == 0) {
             maxElements = lines;
@@ -364,7 +386,7 @@ public class ExternalSorter {
             threadPoolSize = 8;
         } else {
             threadPoolSize = lines / maxElements;
-            if(lines % maxElements != 0){
+            if (lines % maxElements != 0) {
                 threadPoolSize++;
             }
         }
