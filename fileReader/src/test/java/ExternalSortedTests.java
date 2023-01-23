@@ -37,7 +37,7 @@ public class ExternalSortedTests {
     }
 
 
-    @RepeatedTest(100)
+    @RepeatedTest(10000)
     public void mergeSort_should_sort_whereStringsAreFirstAndIntsSecond_inDescendingOrder_byString() {
         //Arrange, Act
         ExternalSorter.mergesort(normalArray, "desc", 0, false);
@@ -51,7 +51,7 @@ public class ExternalSortedTests {
         );
     }
 
-    @RepeatedTest(100)
+    @RepeatedTest(10000)
     public void mergeSort_should_sort_whereStringsAreFirstAndIntsSecond_inAscendingOrder_byNumber() {
         ExternalSorter.mergesort(normalArray, "asc", 1, true);
 
@@ -63,7 +63,7 @@ public class ExternalSortedTests {
         );
     }
 
-    @RepeatedTest(100)
+    @RepeatedTest(10000)
     public void mergeSort_should_sort_arrayOfStrings_where_whereStringsAreFirstAndIntsSecond_inDescendingOrder_byNumber() {
         ExternalSorter.mergesort(normalArray, "desc", 1, true);
 
@@ -76,7 +76,7 @@ public class ExternalSortedTests {
     }
 
     //Reversed array tests
-    @RepeatedTest(100)
+    @RepeatedTest(10000)
     public void mergeSort_should_sort_arrayOfStrings_where_intsAreFirstAndStringsSecond_inAscendingOrder_byString() {
         //Arrange, Act
         ExternalSorter.mergesort(reversedArray, "asc", 1, false);
@@ -90,7 +90,7 @@ public class ExternalSortedTests {
         );
     }
 
-    @RepeatedTest(100)
+    @RepeatedTest(10000)
     public void mergeSort_should_sort_arrayOfStrings_where_intsAreFirstAndStringsSecond_inDescendingOrder_byString() {
         //Arrange, Act
         ExternalSorter.mergesort(reversedArray, "desc", 1, false);
@@ -104,7 +104,7 @@ public class ExternalSortedTests {
         );
     }
 
-    @RepeatedTest(100)
+    @RepeatedTest(10000)
     public void mergeSort_should_sort_arrayOfStrings_where_intsAreFirstAndStringsSecond_inAscendingOrder_byNumber() {
         ExternalSorter.mergesort(reversedArray, "asc", 0, true);
 
@@ -116,7 +116,7 @@ public class ExternalSortedTests {
         );
     }
 
-    @RepeatedTest(100)
+    @RepeatedTest(10000)
     public void mergeSort_should_sort_arrayOfStrings_where_intsAreFirstAndStringsSecond_inDescendingOrder_byNumber() {
         ExternalSorter.mergesort(reversedArray, "desc", 0, true);
 
@@ -129,7 +129,7 @@ public class ExternalSortedTests {
     }
 
     // Test for the following data arranged in any way should produce the result inside of the array.
-    @RepeatedTest(100)
+    @RepeatedTest(10000)
     public void stressTest_should_sort_arrayOfStrings_consistently_byName_inAscendingOrder() throws IOException {
         String demoInput = "name,asc";
         InputStream in = new ByteArrayInputStream(demoInput.getBytes());
@@ -157,7 +157,7 @@ public class ExternalSortedTests {
         }
     }
 
-    @RepeatedTest(100)
+    @RepeatedTest(10000)
     public void stressTest_should_sort_arrayOfStrings_consistently_byName_inDescendingOrder() throws IOException {
         String demoInput = "name,desc";
         InputStream in = new ByteArrayInputStream(demoInput.getBytes());
@@ -183,7 +183,7 @@ public class ExternalSortedTests {
         }
     }
 
-    @RepeatedTest(100)
+    @RepeatedTest(10000)
     public void stressTest_should_sort_arrayOfStrings_consistently_byAge_inAscendingOrder() throws IOException {
         String demoInput = "age,asc";
         InputStream in = new ByteArrayInputStream(demoInput.getBytes());
@@ -210,7 +210,7 @@ public class ExternalSortedTests {
         }
     }
 
-    @RepeatedTest(100)
+    @RepeatedTest(10000)
     public void stressTest_should_sort_arrayOfStrings_consistently_byAge_inDescendingOrder() throws IOException {
         String demoInput = "age,desc";
         InputStream in = new ByteArrayInputStream(demoInput.getBytes());
@@ -230,7 +230,6 @@ public class ExternalSortedTests {
                 "RichardRSchrum@einrot.com,88",
                 "RichardRSchrum@einrot.com,88",
                 "RichardRSchrum@einrot.com,88",
-
         };
         BufferedReader bufferedReader = new BufferedReader(new FileReader(sortedFileDir));
         for (int i = 0; i<13; i++) {
