@@ -76,7 +76,7 @@ public class ExternalSorter {
             //Saves first line of csv which contains sort options.
 
             assert firstRow != null;
-            String[] sortOptionsArr = firstRow.split(",");
+            String[] sortOptionsArr = buffer.readLine().split(",");
             String[] userSortDecision;
             userSortDecision = getUserInput(firstRow);
 
