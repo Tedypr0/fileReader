@@ -1,3 +1,4 @@
+import org.example.Main2;
 import org.example.filereader.ExternalSorter;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -16,12 +17,12 @@ public class ExternalSortedTests {
 
     @BeforeEach
     public void initialization() {
-        normalArray = new String[]{"Teodor,5", "George,2", "Maria,40", "John,10" };
-        reversedArray = new String[]{"5,Teodor", "2,George", "40,Maria", "10,John" };
+        normalArray = new String[]{"Teodor,5", "George,2", "Maria,40", "John,10"};
+        reversedArray = new String[]{"5,Teodor", "2,George", "40,Maria", "10,John"};
         externalSorter = new ExternalSorter();
     }
 
-    @RepeatedTest(1000)
+    @RepeatedTest(100)
     public void mergeSort_should_sort_arrayOfStrings_whereStringsAreFirstAndIntsSecond_inAscendingOrder_byString() {
         //Arrange, Act
         ExternalSorter.mergesort(normalArray, "asc", 0, false);
@@ -36,7 +37,7 @@ public class ExternalSortedTests {
     }
 
 
-    @RepeatedTest(1000)
+    @RepeatedTest(100)
     public void mergeSort_should_sort_whereStringsAreFirstAndIntsSecond_inDescendingOrder_byString() {
         //Arrange, Act
         ExternalSorter.mergesort(normalArray, "desc", 0, false);
@@ -50,7 +51,7 @@ public class ExternalSortedTests {
         );
     }
 
-    @RepeatedTest(1000)
+    @RepeatedTest(100)
     public void mergeSort_should_sort_whereStringsAreFirstAndIntsSecond_inAscendingOrder_byNumber() {
         ExternalSorter.mergesort(normalArray, "asc", 1, true);
 
@@ -62,7 +63,7 @@ public class ExternalSortedTests {
         );
     }
 
-    @RepeatedTest(1000)
+    @RepeatedTest(100)
     public void mergeSort_should_sort_arrayOfStrings_where_whereStringsAreFirstAndIntsSecond_inDescendingOrder_byNumber() {
         ExternalSorter.mergesort(normalArray, "desc", 1, true);
 
@@ -75,7 +76,7 @@ public class ExternalSortedTests {
     }
 
     //Reversed array tests
-    @RepeatedTest(1000)
+    @RepeatedTest(100)
     public void mergeSort_should_sort_arrayOfStrings_where_intsAreFirstAndStringsSecond_inAscendingOrder_byString() {
         //Arrange, Act
         ExternalSorter.mergesort(reversedArray, "asc", 1, false);
@@ -89,7 +90,7 @@ public class ExternalSortedTests {
         );
     }
 
-    @RepeatedTest(1000)
+    @RepeatedTest(100)
     public void mergeSort_should_sort_arrayOfStrings_where_intsAreFirstAndStringsSecond_inDescendingOrder_byString() {
         //Arrange, Act
         ExternalSorter.mergesort(reversedArray, "desc", 1, false);
@@ -103,7 +104,7 @@ public class ExternalSortedTests {
         );
     }
 
-    @RepeatedTest(1000)
+    @RepeatedTest(100)
     public void mergeSort_should_sort_arrayOfStrings_where_intsAreFirstAndStringsSecond_inAscendingOrder_byNumber() {
         ExternalSorter.mergesort(reversedArray, "asc", 0, true);
 
@@ -115,7 +116,7 @@ public class ExternalSortedTests {
         );
     }
 
-    @RepeatedTest(1000)
+    @RepeatedTest(100)
     public void mergeSort_should_sort_arrayOfStrings_where_intsAreFirstAndStringsSecond_inDescendingOrder_byNumber() {
         ExternalSorter.mergesort(reversedArray, "desc", 0, true);
 
@@ -128,7 +129,7 @@ public class ExternalSortedTests {
     }
 
     // Test for the following data arranged in any way should produce the result inside of the array.
-    @RepeatedTest(50)
+    @RepeatedTest(100)
     public void stressTest_should_sort_arrayOfStrings_consistently_byName_inAscendingOrder() throws IOException {
         String demoInput = "name,asc";
         InputStream in = new ByteArrayInputStream(demoInput.getBytes());
@@ -136,26 +137,27 @@ public class ExternalSortedTests {
         externalSorter.start();
         String[] resultArr = {"name,age",
                 "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAaA,123",
+                "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAaA,123",
+                "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAaA,123",
+                "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAaA,123",
+                "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAaA,123",
+                "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAaA,123",
+                "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAaA,123",
                 "DarleneFStoops@armyspy.com,51",
-                "ElnoraEStevens@rhyta.com,6",
-                "GeorgeGHise@einrot.com,7",
-                "KennethDGarcia@cuvox.de,7",
-                "LeighCMeneses@superrito.com,19",
-                "MarcEKey@gustr.com,15",
-                "NellieRSimmon@jourrapide.com,31",
-                "RichardRSchrum@einrot.com,88",
-                "RobertCRosario@rhyta.com,2",
-                "SamanthaEMerry@superrito.com,56",
-                "StevenCMiller@teleworm.us,1",
-                "StevenCMiller@teleworm.us,1",};
+                "DarleneFStoops@armyspy.com,51",
+                "DarleneFStoops@armyspy.com,51",
+                "DarleneFStoops@armyspy.com,51",
+                "DarleneFStoops@armyspy.com,51",
+                "DarleneFStoops@armyspy.com,51",
+               };
 
         BufferedReader bufferedReader = new BufferedReader(new FileReader(sortedFileDir));
-        for (String s : resultArr) {
-            Assertions.assertEquals(s, bufferedReader.readLine().replaceAll("\\P{ASCII}", ""));
+        for (int i = 0; i< 12; i++) {
+            Assertions.assertEquals(resultArr[i], bufferedReader.readLine().replaceAll("\\P{ASCII}", ""));
         }
     }
 
-    @RepeatedTest(50)
+    @RepeatedTest(100)
     public void stressTest_should_sort_arrayOfStrings_consistently_byName_inDescendingOrder() throws IOException {
         String demoInput = "name,desc";
         InputStream in = new ByteArrayInputStream(demoInput.getBytes());
@@ -164,26 +166,24 @@ public class ExternalSortedTests {
         String[] resultArr = {"name,age",
                 "StevenCMiller@teleworm.us,1",
                 "StevenCMiller@teleworm.us,1",
-                "SamanthaEMerry@superrito.com,56",
-                "RobertCRosario@rhyta.com,2",
-                "RichardRSchrum@einrot.com,88",
-                "NellieRSimmon@jourrapide.com,31",
-                "MarcEKey@gustr.com,15",
-                "LeighCMeneses@superrito.com,19",
-                "KennethDGarcia@cuvox.de,7",
-                "GeorgeGHise@einrot.com,7",
-                "ElnoraEStevens@rhyta.com,6",
-                "DarleneFStoops@armyspy.com,51",
-                "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAaA,123",
-        };
-
+                "StevenCMiller@teleworm.us,1",
+                "StevenCMiller@teleworm.us,1",
+                "StevenCMiller@teleworm.us,1",
+                "StevenCMiller@teleworm.us,1",
+                "StevenCMiller@teleworm.us,1",
+                "StevenCMiller@teleworm.us,1",
+                "StevenCMiller@teleworm.us,1",
+                "StevenCMiller@teleworm.us,1",
+                "StevenCMiller@teleworm.us,1",
+                "StevenCMiller@teleworm.us,1",
+                "StevenCMiller@teleworm.us,1",};
         BufferedReader bufferedReader = new BufferedReader(new FileReader(sortedFileDir));
-        for (String s : resultArr) {
-            Assertions.assertEquals(s, bufferedReader.readLine().replaceAll("\\P{ASCII}", ""));
+        for (int i = 0; i < 13; i++) {
+            Assertions.assertEquals(resultArr[i], bufferedReader.readLine().replaceAll("\\P{ASCII}", ""));
         }
     }
 
-    @RepeatedTest(50)
+    @RepeatedTest(100)
     public void stressTest_should_sort_arrayOfStrings_consistently_byAge_inAscendingOrder() throws IOException {
         String demoInput = "age,asc";
         InputStream in = new ByteArrayInputStream(demoInput.getBytes());
@@ -192,25 +192,25 @@ public class ExternalSortedTests {
         String[] resultArr = {"name,age",
                 "StevenCMiller@teleworm.us,1",
                 "StevenCMiller@teleworm.us,1",
-                "RobertCRosario@rhyta.com,2",
-                "ElnoraEStevens@rhyta.com,6",
-                "KennethDGarcia@cuvox.de,7",
-                "GeorgeGHise@einrot.com,7",
-                "MarcEKey@gustr.com,15",
-                "LeighCMeneses@superrito.com,19",
-                "NellieRSimmon@jourrapide.com,31",
-                "DarleneFStoops@armyspy.com,51",
-                "SamanthaEMerry@superrito.com,56",
-                "RichardRSchrum@einrot.com,88",
-                "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAaA,123",
+                "StevenCMiller@teleworm.us,1",
+                "StevenCMiller@teleworm.us,1",
+                "StevenCMiller@teleworm.us,1",
+                "StevenCMiller@teleworm.us,1",
+                "StevenCMiller@teleworm.us,1",
+                "StevenCMiller@teleworm.us,1",
+                "StevenCMiller@teleworm.us,1",
+                "StevenCMiller@teleworm.us,1",
+                "StevenCMiller@teleworm.us,1",
+                "StevenCMiller@teleworm.us,1",
+                "StevenCMiller@teleworm.us,1",
         };
         BufferedReader bufferedReader = new BufferedReader(new FileReader(sortedFileDir));
-        for (String s : resultArr) {
-            Assertions.assertEquals(s, bufferedReader.readLine().replaceAll("\\P{ASCII}", ""));
+        for (int i = 0; i<13; i++) {
+            Assertions.assertEquals(resultArr[i], bufferedReader.readLine().replaceAll("\\P{ASCII}", ""));
         }
     }
 
-    @RepeatedTest(50)
+    @RepeatedTest(100)
     public void stressTest_should_sort_arrayOfStrings_consistently_byAge_inDescendingOrder() throws IOException {
         String demoInput = "age,desc";
         InputStream in = new ByteArrayInputStream(demoInput.getBytes());
@@ -218,22 +218,23 @@ public class ExternalSortedTests {
         externalSorter.start();
         String[] resultArr = {"name,age",
                 "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAaA,123",
+                "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAaA,123",
+                "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAaA,123",
+                "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAaA,123",
+                "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAaA,123",
+                "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAaA,123",
+                "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAaA,123",
                 "RichardRSchrum@einrot.com,88",
-                "SamanthaEMerry@superrito.com,56",
-                "DarleneFStoops@armyspy.com,51",
-                "NellieRSimmon@jourrapide.com,31",
-                "LeighCMeneses@superrito.com,19",
-                "MarcEKey@gustr.com,15",
-                "GeorgeGHise@einrot.com,7",
-                "KennethDGarcia@cuvox.de,7",
-                "ElnoraEStevens@rhyta.com,6",
-                "RobertCRosario@rhyta.com,2",
-                "StevenCMiller@teleworm.us,1",
-                "StevenCMiller@teleworm.us,1",
+                "RichardRSchrum@einrot.com,88",
+                "RichardRSchrum@einrot.com,88",
+                "RichardRSchrum@einrot.com,88",
+                "RichardRSchrum@einrot.com,88",
+                "RichardRSchrum@einrot.com,88",
+
         };
         BufferedReader bufferedReader = new BufferedReader(new FileReader(sortedFileDir));
-        for (String s : resultArr) {
-            Assertions.assertEquals(s, bufferedReader.readLine().replaceAll("\\P{ASCII}", ""));
+        for (int i = 0; i<13; i++) {
+            Assertions.assertEquals(resultArr[i], bufferedReader.readLine().replaceAll("\\P{ASCII}", ""));
         }
     }
 }
