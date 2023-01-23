@@ -14,7 +14,6 @@ public class Consumer extends Thread {
     private final int sortIndex;
     private final boolean isInt;
     private final AtomicBoolean isPoisonFound;
-    private volatile String[] elements;
 
     public Consumer(UniqueEventsQueue<String[]> queue, AtomicInteger counter, String order, int sortIndex, boolean isInt, AtomicBoolean isPoisonFound) {
         this.queue = queue;
