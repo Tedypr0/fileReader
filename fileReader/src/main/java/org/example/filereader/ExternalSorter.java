@@ -25,7 +25,7 @@ public class ExternalSorter {
     private long threadPoolSize = 1;
     private final UniqueEventsQueue<String[]> queue = new UniqueEventsQueue<>(32);
     long lines = 0;
-    long maxElements = 20;    //Write here how many lines each temp file will have.
+    long maxElements = 10;    //Write here how many lines each temp file will have.
     String sortFileDir = "C:\\csv\\100.csv";
     String fileNames = "sortedGeneration";
     String tempFileDir = "C:\\csv\\sortedFiles\\";
@@ -113,7 +113,7 @@ public class ExternalSorter {
                 //Write slices
 
                 try {
-                    //sleep(5000);
+                   // sleep(5000);
                     queue.add(elements);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
@@ -390,8 +390,9 @@ public class ExternalSorter {
                 threadPoolSize++;
             }
         }
+        AtomicBoolean atomicBoolean = new AtomicBoolean(false);
         for (int i = 0; i < threadPoolSize; i++) {
-            threads.add(new Consumer(queue, counter, ascOrDesc, userSortDecisionIndex, intOrNot));
+            threads.add(new Consumer(queue, counter, ascOrDesc, userSortDecisionIndex, intOrNot, atomicBoolean));
             threads.get(i).start();
         }
     }

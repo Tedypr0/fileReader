@@ -13,24 +13,24 @@ public class Consumer extends Thread {
     private final String order;
     private final int sortIndex;
     private final boolean isInt;
+    private final AtomicBoolean isPoisonFound;
+    private volatile String[] elements;
 
-    public Consumer(UniqueEventsQueue<String[]> queue, AtomicInteger counter, String order, int sortIndex, boolean isInt) {
+    public Consumer(UniqueEventsQueue<String[]> queue, AtomicInteger counter, String order, int sortIndex, boolean isInt, AtomicBoolean isPoisonFound) {
         this.queue = queue;
         this.counter = counter;
         this.order = order;
         this.sortIndex = sortIndex;
         this.isInt = isInt;
+        this.isPoisonFound = isPoisonFound;
     }
 
     @Override
     public void run() {
         String[] elements;
-        while(true) {
+        while (!isPoisonFound.get()) {
             try {
-                if (queue.peek()[0].equals("POISONPILL")){
-                    break;
-                }
-                elements = queue.poll();
+                elements = peekPoll();
                 mergesort(elements, order, sortIndex, isInt);
                 writeSortedFile(elements, counter.getAndIncrement());
             } catch (IOException | InterruptedException e) {
@@ -38,5 +38,14 @@ public class Consumer extends Thread {
             }
         }
         System.out.println(this.getName() + " has finished its' work!");
+    }
+
+    private synchronized String[] peekPoll() throws InterruptedException {
+        queue.peek();
+        if (queue.peek()[0].equals("POISONPILL")) {
+            isPoisonFound.set(true);
+        }
+        return queue.poll();
+
     }
 }
