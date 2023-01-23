@@ -5,6 +5,7 @@ import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.lang.Thread.sleep;
@@ -21,22 +22,25 @@ import static java.lang.Thread.sleep;
  */
 
 public class ExternalSorter {
-    private static long threadPoolSize = 1;
-    private static final UniqueEventsQueue<String[]> queue = new UniqueEventsQueue<>(32);
-    long lines = 1;
-    long maxElements = 100000;    //Write here how many lines each temp file will have.
-    static String sortFileDir = "C:\\csv\\10.csv";
-    static String fileNames = "sortedGeneration";
-    static String tempFileDir = "C:\\csv\\sortedFiles\\";
-    AtomicInteger counter = new AtomicInteger(0);
+    private long threadPoolSize = 1;
+    private final UniqueEventsQueue<String[]> queue = new UniqueEventsQueue<>(32);
+    long lines = 0;
+    long maxElements = 20;    //Write here how many lines each temp file will have.
+    String sortFileDir = "C:\\csv\\100.csv";
+    String fileNames = "sortedGeneration";
+    String tempFileDir = "C:\\csv\\sortedFiles\\";
+    AtomicInteger counter;
     long count = 0;
-    public static int userSortDecisionIndex;
-    private static boolean intOrNot;
-    private static String areInt;
-    private  String ascOrDesc;
-    private  final List<Consumer> threads = new ArrayList<>();
+    public int userSortDecisionIndex;
+    private boolean intOrNot;
+    private String areInt;
+    private String ascOrDesc;
+    private final List<Consumer> threads;
 
-     public ExternalSorter(){}
+     public ExternalSorter(){
+         threads = new ArrayList<>();
+         counter = new AtomicInteger(0);
+     }
 
     public  void start(){
         int slices = 0;
@@ -44,17 +48,17 @@ public class ExternalSorter {
         String firstRow = null;
         try (FileReader lineFile = new FileReader(sortFileDir); BufferedReader lineCounter = new BufferedReader(lineFile)) {
             firstRow = lineCounter.readLine();
-
-            areInt = lineCounter.readLine();
+            line = lineCounter.readLine();
+            areInt = line;
 
             // Count the lines of our file.
             // O(number of lines) linear.
-            while ((line = lineCounter.readLine()) != null) {
+          do{
                 if (line.split(",").length == 1) {
                     continue;
                 }
                 lines++;
-            }
+            }while ((line = lineCounter.readLine())!= null);
             slices = (int) Math.ceil((double) lines / maxElements);
 
         } catch (IOException e) {
@@ -81,7 +85,7 @@ public class ExternalSorter {
                 Integer.parseInt(areInt.split(",")[userSortDecisionIndex]);
                 intOrNot = true;
             } catch (NumberFormatException ignored) {}
-            threadCalculatorAndStarter(slices);
+            threadCalculatorAndStarter();
             long lastFile = maxElements;
             String[] elements = new String[(int) maxElements];
             // O(slices*lastFile) complexity which is linear.
@@ -107,7 +111,9 @@ public class ExternalSorter {
                     elements = new String[(int) maxElements];
                 }
             }
-        } catch (IOException e) {
+            elements = new String[]{"POISONPILL"};
+            queue.add(elements);
+        } catch (IOException | InterruptedException e) {
             e.printStackTrace();
         }
 
@@ -341,7 +347,7 @@ public class ExternalSorter {
         }
     }
 
-    public  void closeAndDeleteFile(List<BufferedReader> readers, int index) {
+    public void closeAndDeleteFile(List<BufferedReader> readers, int index) {
         try {
             readers.get(index).close();
             Files.delete(Paths.get(String.format("%s%s%d.csv", tempFileDir, fileNames, index)));
@@ -351,21 +357,19 @@ public class ExternalSorter {
         }
     }
 
-    private  void threadCalculatorAndStarter(int slices) {
+    private void threadCalculatorAndStarter() {
         if (lines / maxElements == 0) {
             maxElements = lines;
         } else if (lines / maxElements > 7) {
             threadPoolSize = 8;
         } else {
             threadPoolSize = lines / maxElements;
+            if(lines % maxElements != 0){
+                threadPoolSize++;
+            }
         }
-
-        if (lines % maxElements != 0 && lines > maxElements) {
-            threadPoolSize++;
-        }
-
         for (int i = 0; i < threadPoolSize; i++) {
-            threads.add(new Consumer(queue, counter, new AtomicInteger(slices), ascOrDesc, userSortDecisionIndex, intOrNot));
+            threads.add(new Consumer(queue, counter, ascOrDesc, userSortDecisionIndex, intOrNot));
             threads.get(i).start();
         }
     }
