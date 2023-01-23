@@ -32,8 +32,7 @@ public class Consumer extends Thread {
                 }
                 elements = queue.poll();
                 mergesort(elements, order, sortIndex, isInt);
-                writeSortedFile(elements, counter.get());
-                counter.incrementAndGet();
+                writeSortedFile(elements, counter.getAndIncrement());
             } catch (IOException | InterruptedException e) {
                 throw new RuntimeException();
             }
