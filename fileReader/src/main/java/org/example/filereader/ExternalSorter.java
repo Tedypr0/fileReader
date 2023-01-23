@@ -23,7 +23,7 @@ import static java.lang.Thread.sleep;
 
 public class ExternalSorter {
     private long threadPoolSize = 1;
-    private final UniqueEventsQueue<String[]> queue = new UniqueEventsQueue<>(32);
+    private static final UniqueEventsQueue<String[]> queue = new UniqueEventsQueue<>(32);
     long lines = 0;
     long maxElements = 10;    //Write here how many lines each temp file will have.
     String sortFileDir = "C:\\csv\\100.csv";
@@ -395,5 +395,15 @@ public class ExternalSorter {
             threads.add(new Consumer(queue, counter, ascOrDesc, userSortDecisionIndex, intOrNot, atomicBoolean));
             threads.get(i).start();
         }
+    }
+
+    public static synchronized String[] peekPoll() throws InterruptedException {
+        queue.peek();
+        if (queue.peek()[0].equals("POISONPILL")) {
+            Consumer.setIsPoisonFound(true);
+        }else {
+            return queue.poll();
+        }
+        return new String[]{"POISONPILL"};
     }
 }

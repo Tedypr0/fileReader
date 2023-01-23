@@ -13,7 +13,7 @@ public class Consumer extends Thread {
     private final String order;
     private final int sortIndex;
     private final boolean isInt;
-    private final AtomicBoolean isPoisonFound;
+    private static AtomicBoolean isPoisonFound = null;
 
     public Consumer(UniqueEventsQueue<String[]> queue, AtomicInteger counter, String order, int sortIndex, boolean isInt, AtomicBoolean isPoisonFound) {
         this.queue = queue;
@@ -21,7 +21,7 @@ public class Consumer extends Thread {
         this.order = order;
         this.sortIndex = sortIndex;
         this.isInt = isInt;
-        this.isPoisonFound = isPoisonFound;
+        Consumer.isPoisonFound = isPoisonFound;
     }
 
     @Override
@@ -29,7 +29,7 @@ public class Consumer extends Thread {
         String[] elements;
         while (!isPoisonFound.get()) {
             try {
-                elements = peekPoll();
+                elements = ExternalSorter.peekPoll();
                 mergesort(elements, order, sortIndex, isInt);
                 writeSortedFile(elements, counter.getAndIncrement());
             } catch (IOException | InterruptedException e) {
@@ -39,13 +39,7 @@ public class Consumer extends Thread {
         System.out.println(this.getName() + " has finished its' work!");
     }
 
-    private synchronized String[] peekPoll() throws InterruptedException {
-        queue.peek();
-        if (queue.peek()[0].equals("POISONPILL")) {
-            isPoisonFound.set(true);
-        }else {
-            return queue.poll();
-        }
-        return new String[]{"POISONPILL"};
+    public synchronized static void setIsPoisonFound(boolean val){
+        isPoisonFound.set(val);
     }
 }
