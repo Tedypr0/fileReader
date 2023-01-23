@@ -43,8 +43,9 @@ public class Consumer extends Thread {
         queue.peek();
         if (queue.peek()[0].equals("POISONPILL")) {
             isPoisonFound.set(true);
+        }else {
+            return queue.poll();
         }
-        return queue.poll();
-
+        return new String[]{"POISONPILL"};
     }
 }
