@@ -8,7 +8,7 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static java.lang.Thread.sleep;
+import static org.example.filereader.Consumer.isPoisonFound;
 
 /*
         Sorts a big csv file containing numbers on the second column and writes them in a new file.
@@ -23,7 +23,7 @@ import static java.lang.Thread.sleep;
 
 public class ExternalSorter {
     private long threadPoolSize = 1;
-    private static final UniqueEventsQueue<String[]> queue = new UniqueEventsQueue<>(32);
+    private final UniqueEventsQueue<String[]> queue = new UniqueEventsQueue<>(32);
     long lines = 0;
     long maxElements = 10;    //Write here how many lines each temp file will have.
     String sortFileDir = "C:\\csv\\100.csv";
@@ -113,7 +113,7 @@ public class ExternalSorter {
                 //Write slices
 
                 try {
-                   // sleep(5000);
+                    // sleep(5000);
                     queue.add(elements);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
@@ -127,7 +127,7 @@ public class ExternalSorter {
                     elements = new String[(int) maxElements];
                 }
             }
-            // Adds the poisonpill array which stops the consumer from consuming.
+            // Adds the poison-pill array which stops the consumer from consuming.
             elements = new String[]{"POISONPILL"};
             queue.add(elements);
         } catch (IOException | InterruptedException e) {
@@ -270,7 +270,7 @@ public class ExternalSorter {
     }
 
     public String[] getUserInput(String sortOptions) {
-        String[] userSortDecision = new String[2];
+        String[] userSortDecision;
         System.out.println("Write what you want to sort by.");
         System.out.printf("You can sort by %s%n", sortOptions);
         System.out.println("Write in what order you want to sort: asc or desc with a comma");
@@ -295,7 +295,6 @@ public class ExternalSorter {
     public static void mergesort(String[] str, String ascOrDesc, int sortIndex, boolean isInt) {
         int low = 0;
         int high = str.length - 1;
-
         String[] temp = Arrays.copyOf(str, str.length);
         for (int m = 1; m <= high - low; m = 2 * m) {
             for (int i = low; i < high; i += 2 * m) {
@@ -397,13 +396,13 @@ public class ExternalSorter {
         }
     }
 
-    public static synchronized String[] peekPoll() throws InterruptedException {
+    public static synchronized String[] peekPoll(UniqueEventsQueue<String[]> queue) throws InterruptedException {
         queue.peek();
         if (queue.peek()[0].equals("POISONPILL")) {
-            Consumer.setIsPoisonFound(true);
-        }else {
+            isPoisonFound.set(true);
+        } else {
             return queue.poll();
         }
-        return new String[]{"POISONPILL"};
+        return null;
     }
 }
